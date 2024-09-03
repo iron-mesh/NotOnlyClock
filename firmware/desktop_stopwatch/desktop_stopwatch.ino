@@ -6,35 +6,42 @@
 #include <Wire.h>
 
 #define WPAGE_DURATION 5000 // duration of a weather unit demonstration
-#define VERSION "0_1_0"
+#define DISPLAY_BLINK_PERIOD 200 
+#define BTN_STEP_TIMEOUT 100
+#define VERSION "0_2_0"
 
 enum Modes{STOPWATCH,
       CLOCK,
       TIMER,
       WEATHER,
-      CLOCK_TUNE,
-      OPTIONS};
+      CLOCK_TUNE};
 
 enum WeatherUnit{TEMPERATURE, 
     HUMIDITY, 
     PRESSURE};
+
+struct Time{
+  uint8_t h = 0;
+  uint8_t m = 0;
+  uint8_t s = 0;
+};
 
 MAX7219 max7219;
 BME280I2C bme;
 
 TimerMs btn_handler_timer(50, 1, 0); 
 TimerMs wpage_timer(WPAGE_DURATION); 
+TimerMs display_blink_timer(DISPLAY_BLINK_PERIOD); 
 
-Modes current_mode = STOPWATCH;
+Modes current_mode = CLOCK;
 WeatherUnit current_weat_page = TEMPERATURE;
 
 volatile bool do_display_update = true; 
 bool is_stopwatch_launched = false; 
 bool is_display_on = true; 
 
-volatile uint8_t sw_hour = 0; //stop watch time elements
-volatile uint8_t sw_min = 0;
-volatile uint8_t sw_sec = 0;
+Time sw_time;
+Time clock_time;
 
 char disp_buf[9];
 
@@ -47,7 +54,8 @@ void setup() {
   // put your setup code here, to run once:
   // Serial.begin(9600);
 
-  Timer1.setPeriod(995853); 
+  // Timer1.setPeriod(995853);
+  Timer1.setPeriod(9958); 
   Timer1.enableISR();
 
   max7219.Begin();
@@ -55,6 +63,8 @@ void setup() {
 
   Wire.begin();
   bme.begin();
+
+  init_buttons();
 }
 
 void loop() {

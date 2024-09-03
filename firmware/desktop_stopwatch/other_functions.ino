@@ -2,12 +2,15 @@
 
 void set_next_mode(){
   switch(current_mode){
+    case CLOCK:
+      current_mode = STOPWATCH;
+    break;
     case STOPWATCH:
       current_mode = WEATHER;
       wpage_timer.start();
     break;
     case WEATHER:
-      current_mode = STOPWATCH;
+      current_mode = CLOCK;
       wpage_timer.stop();
     break;
   }

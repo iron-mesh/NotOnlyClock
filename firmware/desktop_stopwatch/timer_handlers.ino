@@ -1,4 +1,4 @@
-
+ 
 void handle_timers(){
 
   if (btn_handler_timer.tick()) handle_buttons();
@@ -10,4 +10,7 @@ void handle_timers(){
       current_weat_page = current_weat_page + 1;
     call_display_update();
   }
+
+  if (display_blink_timer.tick()) blink_display();
+  
 }
