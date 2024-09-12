@@ -4,6 +4,12 @@ void init_buttons(){
   button3.setStepTimeout(BTN_STEP_TIMEOUT);
 }
 
+void reset_buttons(){
+  button1.reset();
+  button2.reset();
+  button3.reset(); 
+}
+
 void handle_buttons(){
   if (!(button1.tick() || button2.tick() || button3.tick()) ) return;
 
@@ -18,29 +24,39 @@ void handle_buttons(){
   }
 
   if (!is_display_on) return ;
+  
+  Modes m = current_mode;
+  if(m == CLOCK || m == STOPWATCH || m == TIMER || m == WEATHER){    
+    if (button1.holding() && button2.holding() && button3.holding()){    
+      reset_buttons();
+      edit_settings();
+      apply_settings();
+      save_settings();
+    }   
 
-  if (button1.release()){
-    Modes m = current_mode;
-    if(m == CLOCK || m == STOPWATCH || m == TIMER || m == WEATHER){
+    if (button1.release()){
       set_next_mode();
       button1.reset();
-    }    
-  }
+    } 
+  }  
 
   switch(current_mode){
     case CLOCK:
       if (button2.holding() && button3.click()){ 
-      set_display_blinking(true);
-      current_mode = CLOCK_TUNE;
-      clock_time.s = 0;
+      set_mode(CLOCK_TUNE);
       return ;
       }
     break;
 
     case CLOCK_TUNE:
       if (button1.release()){
-        current_mode = CLOCK;        
-        set_display_blinking(false);        
+        set_mode(CLOCK);       
+      }
+      if (button2.holding() && button3.click()){
+        clock_time.h = 0;
+        clock_time.m = 0;
+        button3.reset();
+        call_display_update();
       }    
       if (button2.click() || button2.step()){
         if (clock_time.h >= 23) clock_time.h = 0; 
@@ -75,22 +91,85 @@ void handle_buttons(){
     }
     break;
 
-    case WEATHER:
-      if (button2.release()){
-        if (current_weat_page == 0)
-          current_weat_page = 2;
-        else
-          current_weat_page = current_weat_page - 1;
-        wpage_timer.start();
-        call_display_update();
-      } 
-    
+    case TIMER:
+      if (button2.holding() && button3.click()){ 
+        set_mode(TIMER_TUNE);
+        return ;
+      }
       if (button3.release()){
-        wpage_timer.force();
+        if (!is_timer_launched && (timer_time.h + timer_time.m + timer_time.s) > 0){
+          is_timer_launched = true;
+        }else{
+          is_timer_launched = false;          
+        }
+        call_display_update();
+      }
+
+      if (button2.release() && !is_timer_launched){
+          timer_time.h = timer_start_time.h;
+          timer_time.m = timer_start_time.m;
+          timer_time.s = timer_start_time.s;
+          call_display_update();
       }
     break;
 
+    case TIMER_TUNE:
+      if (button1.release()){
+        set_mode(TIMER);       
+      }      
+      if (button2.holding() && button3.click()){
+        timer_start_time.h = 0;
+        timer_start_time.m = 0;
+        timer_start_time.s = 0;
+        button3.reset();
+        call_display_update();
+      }
+      if (button2.click()){
+        if (blinking_zone < 6)
+          blinking_zone += 3;
+        else
+          blinking_zone = 0;
+        call_display_update();
+      }      
+      if (button3.click() || button3.step()){
+        switch(blinking_zone){
+          case 0:
+            if (timer_start_time.h >= 99) 
+              timer_start_time.h = 0;
+            else 
+              timer_start_time.h ++;            
+          break;
+          case 3:
+            if (timer_start_time.m >= 59) 
+              timer_start_time.m = 0;
+            else 
+              timer_start_time.m ++;            
+          break;
+          case 6:
+            if (timer_start_time.s >= 59) 
+              timer_start_time.s = 0;
+            else 
+              timer_start_time.s ++;            
+          break;
+        }
+        call_display_update();
+      }    
+    break;
+
+    case TIMER_EXPIRED:
+      if(button1.release() || button2.release() || button3.release())
+        set_mode(TIMER);
+    break;
+
+    case WEATHER:
+      if (button2.release())
+        change_wpage(-1, true);
+    
+      if (button3.release()){
+        change_wpage(1, true);
+    break;
 
   }
 
+}
 }
