@@ -13,6 +13,7 @@ void set_mode(Modes mode){
     case TIMER_EXPIRED:
       blinking_zone = -1;
       set_display_blinking(false);
+      buzzer_timer.stop();
       timer_time.h = timer_start_time.h;
       timer_time.m = timer_start_time.m;
       timer_time.s = timer_start_time.s;
@@ -39,6 +40,9 @@ void set_mode(Modes mode){
       is_timer_launched = false;
       set_display_blinking(true);
       switch_display(true);
+      if (settings.p11_use_speaker)
+        buzzer_timer.start();
+      
     break;
   }
 

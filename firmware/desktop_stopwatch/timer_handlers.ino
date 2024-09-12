@@ -12,5 +12,8 @@ void handle_timers(){
 
   if (display_blink_timer.tick()) 
     blink_display();
+
+  if(buzzer_timer.tick())
+    tone(5, BUZZER_FREQ, BUZZER_DURATION);
   
 }

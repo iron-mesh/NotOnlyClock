@@ -8,14 +8,18 @@
 
 // firmware configuration
 #define DEBUG 1 // 1 - debug is activated, 0 - deactivated
-// #define VERSION "0.2.0A" //firmware version
 #define VERSION "0.0.2" 
 #define DISPLAY_INVERTED 1 // inverted connection of segments to MAX7219
+
 #define INIT_KEY 129// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
 #define BTN_STEP_TIMEOUT 80
+
+#define BUZZER_FREQ 523 // frequency of the sound wave
+#define BUZZER_DURATION 400 // duration of speaking (ms)
+#define BUZZER_DELAY 300 // delay between speakings
 
 #include "utils/utils.h"
 
@@ -68,6 +72,7 @@ TimerMs btn_handler_timer(50, 1, 0);
 TimerMs wpage_timer;
 TimerMs weather_update_timer; 
 TimerMs display_blink_timer(DISPLAY_BLINK_PERIOD); 
+TimerMs buzzer_timer(BUZZER_DURATION + BUZZER_DELAY); 
 
 Modes current_mode = CLOCK;
 WeatherUnit current_weat_page = TEMPERATURE;
@@ -94,6 +99,8 @@ Button button3 = Button(4);
 
 
 void setup() {
+  pinMode(5, OUTPUT);
+
   #if (DEBUG == 1)
     Serial.begin(9600);
   #endif
