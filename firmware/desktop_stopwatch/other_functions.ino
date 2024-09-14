@@ -8,6 +8,7 @@ void set_mode(Modes mode){
 
     case CLOCK_TUNE:
       set_display_blinking(false);
+      try_change_brightness_mode(true);
     break;
     case TIMER_TUNE:
     case TIMER_EXPIRED:

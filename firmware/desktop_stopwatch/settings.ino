@@ -1,32 +1,25 @@
 void save_settings(){
-  DEBUG_PRINTLN(F("save settings func"));
   SetttingsData temp;
   EEPROM.get(0, temp);
-  DEBUG_PRINTLN(memcmp(&temp, &settings, sizeof(SetttingsData)));
   if (memcmp(&temp, &settings, sizeof(SetttingsData)) != 0) {
     EEPROM.put(0, settings);
-    DEBUG_PRINTLN(F("Settings has been saved"));
   }
 }
 
 void load_settings(){
-  DEBUG_PRINTLN(F("load settings func"));
-  DEBUG_PRINT(F("INIT KEY "));
-  DEBUG_PRINTLN(EEPROM.read(INIT_KEY_ADDR));
-  if (EEPROM.read(INIT_KEY_ADDR) != INIT_KEY){    
+  if (EEPROM.read(INIT_KEY_ADDR) != INIT_KEY){
     save_settings();
     EEPROM.write(INIT_KEY_ADDR, INIT_KEY);
   }else{
     EEPROM.get(0, settings);
-    DEBUG_PRINTLN(F("Settings has been loaded"));
-  }     
+  }
 }
 
 
 void apply_settings(){
   max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
-  Timer1.setPeriod(settings.p6_maintimer_period); 
-  
+  Timer1.setPeriod(settings.p6_maintimer_period);
+
   if (settings.p7_wpage_change_freq > 0)
     wpage_timer.setTime(settings.p7_wpage_change_freq * 1000);
   else
@@ -36,10 +29,13 @@ void apply_settings(){
     weather_update_timer.setTime(settings.p8_weather_update_freq * 1000);
   else
     weather_update_timer.stop();
-  // parameter 4 doesnt exist  
-} 
 
-uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max){
+  try_change_brightness_mode(true);
+  // parameter 4 doesnt exist
+}
+
+uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max, const bool change_bright){
+  if (change_bright) max7219.MAX7219_SetBrightness(value);
   char disp_text[4] = "";
   if (value < min)
     value = min;
@@ -51,13 +47,14 @@ uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max){
     if (!(button1.tick() || button2.tick() || button3.tick())) continue;
 
     if (button1.release()) return value;
-    
+
     if (button2.step() || button2.click()){
         if (value == min)
           value = max;
         else
           value --;
         display_text(itoa(value, disp_text, DEC));
+        if (change_bright) max7219.MAX7219_SetBrightness(value);
     }
 
     if (button3.step() || button3.click()){
@@ -66,6 +63,7 @@ uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max){
         else
           value ++;
         display_text(itoa(value, disp_text, DEC));
+        if (change_bright) max7219.MAX7219_SetBrightness(value);
     }
   }
 
@@ -87,7 +85,7 @@ uint32_t input_ulong (uint32_t value){
 
   display_text(val_str);
 
-  TimerMs blinking_timer (DISPLAY_BLINK_PERIOD, 1, 0); 
+  TimerMs blinking_timer (DISPLAY_BLINK_PERIOD, 1, 0);
   uint8_t blinking_chindex = 0;
   bool bl_state = false;
 
@@ -104,16 +102,16 @@ uint32_t input_ulong (uint32_t value){
 
     if (!(button1.tick() || button2.tick() || button3.tick())) continue;
 
-    if (button1.release()) {      
+    if (button1.release()) {
       return (uint32_t)atol(val_str);
     }
-    
+
     if (button2.release()){
         if (blinking_chindex == 6)
           blinking_chindex = 0;
         else
           blinking_chindex ++;
-        display_text(val_str);        
+        display_text(val_str);
     }
 
     if (button3.step() || button3.click()){
@@ -131,16 +129,20 @@ void edit_settings(){
   display_text(VERSION);
   delay(3000);
 
+  is_auto_brightness_allowed = false;
+  max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
+
   uint8_t current_param = 1;
   display_parameter(current_param);
   while(1){
     if (!(button1.tick() || button2.tick() || button3.tick())) continue;
-   
+
     if (button1.holding() && button2.holding() && button3.holding()) {
       reset_buttons();
       display_text("b4E");
       delay(2000);
       call_display_update();
+      is_auto_brightness_allowed = true;
       break;
     }
 
@@ -159,44 +161,46 @@ void edit_settings(){
         current_param ++;
       display_parameter(current_param);
     }
-    
-    
+
+
     if (button1.release()){
       switch(current_param){
         case 1:
-          settings.p1_display_brightness = input_uint8(settings.p1_display_brightness, 0, 15);
+          settings.p1_display_brightness = input_uint8(settings.p1_display_brightness, 0, 15, true);
+          max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
         break;
         case 2:
-          settings.p2_night_display_brightness = input_uint8(settings.p2_night_display_brightness, 0, 15);
+          settings.p2_night_display_brightness = input_uint8(settings.p2_night_display_brightness, 0, 15, true);
+          max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
         break;
         case 3:
-          settings.p3_nightbrightness_start_hour = input_uint8(settings.p3_nightbrightness_start_hour, 0, 23);
+          settings.p3_nightbrightness_start_hour = input_uint8(settings.p3_nightbrightness_start_hour, 0, 23, false);
         break;
         case 4:
-          settings.p4_nightbrightness_end_hour = input_uint8(settings.p4_nightbrightness_end_hour, 0, 23);
+          settings.p4_nightbrightness_end_hour = input_uint8(settings.p4_nightbrightness_end_hour, 0, 23, false);
         break;
         case 5:
-          settings.p5_show_seconds_clock = input_uint8(settings.p5_show_seconds_clock, 0, 1);
+          settings.p5_show_seconds_clock = input_uint8(settings.p5_show_seconds_clock, 0, 1, false);
         break;
         case 6:
           settings.p6_maintimer_period = input_ulong(settings.p6_maintimer_period);
-          if (settings.p6_maintimer_period < 1) 
+          if (settings.p6_maintimer_period < 1)
             settings.p6_maintimer_period = 1;
         break;
         case 7:
-          settings.p7_wpage_change_freq = input_uint8(settings.p7_wpage_change_freq, 0, 255);
+          settings.p7_wpage_change_freq = input_uint8(settings.p7_wpage_change_freq, 0, 255, false);
         break;
         case 8:
-          settings.p8_weather_update_freq = input_uint8(settings.p8_weather_update_freq, 0, 255);
+          settings.p8_weather_update_freq = input_uint8(settings.p8_weather_update_freq, 0, 255, false);
         break;
         case 9:
-          settings.p9_temperature_unit = input_uint8(settings.p9_temperature_unit, 0, 1);
+          settings.p9_temperature_unit = input_uint8(settings.p9_temperature_unit, 0, 1, false);
         break;
         case 10:
-          settings.p10_pres_unit = input_uint8(settings.p10_pres_unit, 0, 2);
+          settings.p10_pres_unit = input_uint8(settings.p10_pres_unit, 0, 2, false);
         break;
         case 11:
-          settings.p11_use_speaker = input_uint8(settings.p11_use_speaker, 0, 1);
+          settings.p11_use_speaker = input_uint8(settings.p11_use_speaker, 0, 1, false);
         break;
       }
       display_parameter(current_param);

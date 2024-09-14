@@ -57,9 +57,9 @@ struct SetttingsData{
   uint8_t p3_nightbrightness_start_hour = 0;
   uint8_t p4_nightbrightness_end_hour= 0;
   uint8_t p5_show_seconds_clock = 1;
-  uint32_t p6_maintimer_period = 995853;
+  uint32_t p6_maintimer_period = 1000000;
   uint8_t p7_wpage_change_freq = 5;
-  uint8_t p8_weather_update_freq = 1;
+  uint8_t p8_weather_update_freq = 0;
   uint8_t p9_temperature_unit = 0;
   uint8_t p10_pres_unit = 0;
   uint8_t p11_use_speaker = 0;

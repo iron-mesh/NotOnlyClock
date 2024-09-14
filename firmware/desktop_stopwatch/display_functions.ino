@@ -103,7 +103,6 @@ void update_display(){
   max7219.DisplayText(disp_buf, ALIGNMENT_DISP);
  
   do_display_update = false;
-  // DEBUG_PRINTLN(F("Display update finished"));
 }
 
 void clear_display_buffer(){
@@ -191,4 +190,33 @@ void change_wpage(int8_t direction, bool reset_timers){
   }
   
   call_display_update();
+}
+
+void try_change_brightness_mode(const bool force_checking){
+  if (!is_auto_brightness_allowed || settings.p3_nightbrightness_start_hour == settings.p4_nightbrightness_end_hour) return;
+  volatile static uint8_t prev_hour = clock_time.h;
+  volatile static bool is_night_mode = false;
+  if (force_checking){
+    DEBUG_PRINTLN(F("Force checking"));
+    is_night_mode = curr_hour_in_range();
+    if (is_night_mode)
+      max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
+    else
+      max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
+    return;
+  }
+
+  if (prev_hour != clock_time.h){
+    if (!is_night_mode && curr_hour_in_range()){
+      max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
+      is_night_mode = true;
+      DEBUG_PRINTLN(F("Set night mode"));
+    } 
+    else if (is_night_mode && !curr_hour_in_range()){
+      max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
+      is_night_mode = false;
+      DEBUG_PRINTLN(F("Set day mode"));
+    }
+    prev_hour = clock_time.h;
+  }
 }
