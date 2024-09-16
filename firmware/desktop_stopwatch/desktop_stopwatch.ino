@@ -8,7 +8,7 @@
 
 // firmware configuration
 #define DEBUG 1 // 1 - debug is activated, 0 - deactivated
-#define VERSION "0.0.2" 
+#define VERSION "0.2.0" 
 #define DISPLAY_INVERTED 1 // inverted connection of segments to MAX7219
 
 #define INIT_KEY 129// key for eeprom settings storage
@@ -84,7 +84,7 @@ bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
 int blinking_zone = -1;
 SetttingsData settings;
-SensorType connected_sensor;
+SensorType connected_sensor = NO_SENSOR;
 
 Time sw_time;
 Time clock_time;
@@ -119,11 +119,8 @@ void setup() {
       case BME280::ChipModel_BMP280:
         connected_sensor = SENSOR_BMP280;
       break;
-      default:
-        connected_sensor = NO_SENSOR;
     }
-  } else 
-    connected_sensor = NO_SENSOR;
+  } 
 
   init_buttons();
   apply_settings();
