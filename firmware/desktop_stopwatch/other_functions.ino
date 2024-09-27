@@ -5,10 +5,15 @@ void set_mode(Modes mode){
       wpage_timer.stop();
       weather_update_timer.stop();
     break;
-
     case CLOCK_TUNE:
       set_display_blinking(false);
       try_change_brightness_mode(true);
+      if (is_rtc_available){
+        DEBUG_PRINTLN(F("RTS set time"));
+        rtc.setHours((unsigned int) clock_time.h);
+        rtc.setMinutes((unsigned int) clock_time.m);
+        rtc.setSeconds((unsigned int) clock_time.s);           
+      }
     break;
     case TIMER_TUNE:
     case TIMER_EXPIRED:
@@ -42,8 +47,7 @@ void set_mode(Modes mode){
       set_display_blinking(true);
       switch_display(true);
       if (settings.p11_use_speaker)
-        buzzer_timer.start();
-      
+        buzzer_timer.start();      
     break;
   }
 
@@ -105,6 +109,5 @@ String get_weather_param_str(WeatherUnit param){
       str.concat(String(value, 2));
   }
   return str;
-
 }
 

@@ -5,11 +5,13 @@
 #include <BME280I2C.h>
 #include <Wire.h>
 #include <EEPROM.h>
+#include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
 #define VERSION "0.2.0" 
-#define DISPLAY_INVERTED 1 // inverted connection of segments to MAX7219
+#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - no
+#define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
 #define INIT_KEY 129// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
@@ -17,6 +19,7 @@
 #define DISPLAY_BLINK_PERIOD 200 
 #define BTN_STEP_TIMEOUT 80
 
+#define BUZZER_PIN 5 // speaker pin
 #define BUZZER_FREQ 523 // frequency of the sound wave
 #define BUZZER_DURATION 400 // duration of speaking (ms)
 #define BUZZER_DELAY 300 // delay between speakings
@@ -67,6 +70,7 @@ struct SetttingsData{
 
 MAX7219 max7219;
 BME280I2C bme;
+DS3231 rtc;
 
 TimerMs btn_handler_timer(50, 1, 0); 
 TimerMs wpage_timer;
@@ -82,6 +86,7 @@ bool is_stopwatch_launched = false;
 bool is_timer_launched = false; 
 bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
+bool is_rtc_available = false;
 int blinking_zone = -1;
 SetttingsData settings;
 SensorType connected_sensor = NO_SENSOR;
@@ -99,18 +104,22 @@ Button button3 = Button(4);
 
 
 void setup() {
-  pinMode(5, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
 
   #if (DEBUG == 1)
     Serial.begin(9600);
+    Serial.println(F("Setup stage"));
   #endif
 
-  load_settings();  
-  Timer1.enableISR();
+  load_settings(); 
+  apply_settings();   
 
   max7219.Begin();
 
   Wire.begin();
+  Wire.setClock(10000);
+
+  DEBUG_PRINTLN(F("Sensor init"));
   if (bme.begin()){
     switch(bme.chipModel()) {
       case BME280::ChipModel_BME280:
@@ -120,14 +129,34 @@ void setup() {
         connected_sensor = SENSOR_BMP280;
       break;
     }
-  } 
+  }   
 
-  init_buttons();
-  apply_settings();
+  #if (USE_RTC_MODULE == 1)
+    delay(1000); 
+    is_rtc_available = rtc.begin();
+    DEBUG_PRINTLN(F("RTС init"));
+  #endif  
+  if (is_rtc_available){  
+    if(rtc.isRunning()){
+      DEBUG_PRINTLN(F("RTС is running"));
+      clock_time.h = (uint8_t)rtc.getHours();
+      clock_time.m = (uint8_t)rtc.getMinutes();
+      clock_time.s = (uint8_t)rtc.getSeconds();
+    } else {
+      DEBUG_PRINTLN(F("RTС is NOT running"));
+      rtc.setHours((unsigned int) clock_time.h);
+      rtc.setMinutes((unsigned int) clock_time.m);
+      rtc.setSeconds((unsigned int) clock_time.s);
+      rtc.startClock();
+    }
+  }
+  Timer1.enableISR();  
+
+  init_buttons();  
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   update_display();
-  handle_timers();  
+  handle_timers(); 
 }
