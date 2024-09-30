@@ -46,6 +46,21 @@ void handle_buttons(){
       set_mode(CLOCK_TUNE);
       return ;
       }
+      if (button3.holding() && button2.click()){ 
+      set_mode(ALARM_TUNE);
+      return ;
+      }
+      if (button2.holding() && button3.holding()){
+        is_alarm_active = !is_alarm_active;
+        if (is_alarm_active)
+          display_text("AL ON");
+        else
+          display_text("AL OFF");
+        delay(2000); 
+        save_alarm(); 
+        call_display_update();
+        return;
+      }
     break;
 
     case CLOCK_TUNE:
@@ -55,7 +70,7 @@ void handle_buttons(){
       if (button2.holding() && button3.click()){
         clock_time.h = 0;
         clock_time.m = 0;
-        button3.reset();
+        reset_buttons();
         call_display_update();
       }    
       if (button2.click() || button2.step()){
@@ -66,6 +81,28 @@ void handle_buttons(){
       if (button3.click() || button3.step()){
         if (clock_time.m >= 59) clock_time.m = 0;
         else clock_time.m ++;
+        call_display_update();
+      }
+    break;
+
+    case ALARM_TUNE:
+      if (button1.release()){
+        set_mode(CLOCK);       
+      }
+      if (button3.holding() && button2.click()){
+        alarm_time.h = 0;
+        alarm_time.m = 0;
+        reset_buttons();
+        call_display_update();
+      }    
+      if (button2.click() || button2.step()){
+        if (alarm_time.h >= 23) alarm_time.h = 0; 
+        else alarm_time.h ++;
+        call_display_update();
+      }      
+      if (button3.click() || button3.step()){
+        if (alarm_time.m >= 59) alarm_time.m = 0;
+        else alarm_time.m ++;
         call_display_update();
       }
     break;
@@ -167,6 +204,11 @@ void handle_buttons(){
     
       if (button3.release()){
         change_wpage(1, true);
+    break;
+
+    case ALARM:
+      if(button2.release())
+        set_mode(CLOCK);
     break;
 
   }

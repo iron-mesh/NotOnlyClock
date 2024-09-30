@@ -68,16 +68,55 @@ void send_time_to_dispbuff(Time &time, const char sep, bool show_sec){
   }  
 }
 
+void send_clocktime_to_dispbuff_doted(bool show_sec){
+  if (show_sec){
+    disp_buf[0] = (clock_time.h / 10) + 48;
+    disp_buf[1] = (clock_time.h % 10) + 48;
+    disp_buf[2] = '.';
+    disp_buf[3] = ' ';
+    disp_buf[4] = (clock_time.m / 10) + 48;
+    disp_buf[5] = (clock_time.m % 10) + 48;
+    disp_buf[6] = '.';
+    disp_buf[7] = ' ';
+    disp_buf[8] = (clock_time.s / 10) + 48;
+    disp_buf[9] = (clock_time.s % 10) + 48;
+    disp_buf[10] = '.';
+  } else {
+    disp_buf[0] = ' ';
+    disp_buf[1] = (clock_time.h / 10) + 48;
+    disp_buf[2] = (clock_time.h % 10) + 48;
+    disp_buf[3] = '.';
+    disp_buf[4] = ' ';
+    disp_buf[5] = ' ';
+    disp_buf[6] = (clock_time.m / 10) + 48;
+    disp_buf[7] = (clock_time.m % 10) + 48;
+    disp_buf[8] = '.';
+    disp_buf[9] = ' ';
+  }  
+}
+
 void update_display(){
   if (!do_display_update || !is_display_on) return;
 
   switch (current_mode){
-    case CLOCK:      
-      send_time_to_dispbuff(clock_time, ' ', settings.p5_show_seconds_clock);
+    case CLOCK:
+    case ALARM:
+      if (is_alarm_active)
+        send_clocktime_to_dispbuff_doted(settings.p5_show_seconds_clock);
+      else      
+        send_time_to_dispbuff(clock_time, ' ', settings.p5_show_seconds_clock);
     break;
 
     case CLOCK_TUNE:
       send_time_to_dispbuff(clock_time, ' ', false);
+    break;
+
+    case ALARM_TUNE:
+      send_time_to_dispbuff(alarm_time, ' ', false);
+      for(int i=2;i>0;i--)
+        disp_buf[i+1] = disp_buf[i];
+      disp_buf[0] = 'A';
+      disp_buf[1] = ' ';
     break;
 
     case STOPWATCH:

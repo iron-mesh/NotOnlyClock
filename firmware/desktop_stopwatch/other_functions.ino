@@ -15,6 +15,10 @@ void set_mode(Modes mode){
         rtc.setSeconds((unsigned int) clock_time.s);           
       }
     break;
+    case ALARM_TUNE:      
+      set_display_blinking(false);
+      save_alarm();
+    break;
     case TIMER_TUNE:
     case TIMER_EXPIRED:
       blinking_zone = -1;
@@ -23,6 +27,10 @@ void set_mode(Modes mode){
       timer_time.h = timer_start_time.h;
       timer_time.m = timer_start_time.m;
       timer_time.s = timer_start_time.s;
+    break;
+    case ALARM:
+      set_display_blinking(false);
+      buzzer_timer.stop();      
     break;
   }
 
@@ -37,6 +45,9 @@ void set_mode(Modes mode){
       set_display_blinking(true);      
       clock_time.s = 0;
     break;
+    case ALARM_TUNE:
+      set_display_blinking(true);
+    break;
     case TIMER_TUNE:
       is_timer_launched = false;
       set_display_blinking(true);
@@ -49,9 +60,15 @@ void set_mode(Modes mode){
       if (settings.p11_use_speaker)
         buzzer_timer.start();      
     break;
+    case ALARM:
+      set_display_blinking(true);
+      switch_display(true);
+      buzzer_timer.start();      
+    break;
   }
 
   current_mode = mode;
+  clear_display_buffer();
   call_display_update();
 }
 

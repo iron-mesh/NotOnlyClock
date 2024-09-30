@@ -51,14 +51,20 @@ ISR(TIMER1_A){
     uint8_t prev_min = clock_time.m;
     increase_time(clock_time, 23);
     try_change_brightness_mode(false); 
-    if ((current_mode == CLOCK) && (settings.p5_show_seconds_clock || prev_min != clock_time.m))
-        call_display_update();  
+    if ((current_mode == CLOCK || current_mode == ALARM) && (settings.p5_show_seconds_clock || prev_min != clock_time.m))
+        call_display_update();
+    if (is_alarm_active && (current_mode != ALARM_TUNE) && prev_min != clock_time.m ){
+      if (clock_time.h == alarm_time.h && clock_time.m == alarm_time.m)
+        set_mode(ALARM);
+    }
   }
 
   if (is_timer_launched){
     decrease_time(timer_time);
-    if ((timer_time.h + timer_time.m + timer_time.s) == 0) set_mode(TIMER_EXPIRED);
-    if (current_mode == TIMER) call_display_update();
+    if ((timer_time.h + timer_time.m + timer_time.s) == 0 && current_mode != ALARM) 
+      set_mode(TIMER_EXPIRED);
+    if (current_mode == TIMER) 
+      call_display_update();
   }
 
 }

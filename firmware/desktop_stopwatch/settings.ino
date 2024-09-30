@@ -1,17 +1,34 @@
 void save_settings(){
   SetttingsData temp;
-  EEPROM.get(0, temp);
+  EEPROM.get(addr_settings, temp);
   if (memcmp(&temp, &settings, sizeof(SetttingsData)) != 0) {
-    EEPROM.put(0, settings);
+    EEPROM.put(addr_settings, settings);
+    DEBUG_PRINTLN(F("Saved settings"));
   }
 }
 
-void load_settings(){
+void save_alarm(){
+  Time temp;
+  EEPROM.get(addr_alarm_time, temp);
+  if (memcmp(&temp, &alarm_time, sizeof(Time)) != 0) {
+    EEPROM.put(addr_alarm_time, alarm_time);
+    DEBUG_PRINTLN(F("Saved alarm time"));
+  }
+  if (EEPROM.read(addr_alarm_status) != is_alarm_active){
+    EEPROM.write(addr_alarm_status, is_alarm_active);
+    DEBUG_PRINTLN(F("Saved alarm status"));
+  }
+}
+
+void load_eeprom_data(){
   if (EEPROM.read(INIT_KEY_ADDR) != INIT_KEY){
     save_settings();
+    save_alarm();
     EEPROM.write(INIT_KEY_ADDR, INIT_KEY);
   }else{
-    EEPROM.get(0, settings);
+    EEPROM.get(addr_settings, settings);
+    EEPROM.get(addr_alarm_time, alarm_time);
+    is_alarm_active = EEPROM.read(addr_alarm_status);
   }
 }
 

@@ -8,12 +8,12 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
-#define VERSION "1.0.0" 
-#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - no
+#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define VERSION "1.1.0"
+#define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - no
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
-#define INIT_KEY 129// key for eeprom settings storage
+#define INIT_KEY 12// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
@@ -32,13 +32,16 @@
   #define ALIGNMENT_DISP  0
 #endif
 
+//types definitions
 enum Modes{STOPWATCH,
-      CLOCK,
-      TIMER,
-      WEATHER,
-      CLOCK_TUNE, 
-      TIMER_TUNE,
-      TIMER_EXPIRED};
+  CLOCK,
+  TIMER,
+  WEATHER,
+  ALARM,
+  CLOCK_TUNE, 
+  TIMER_TUNE,
+  ALARM_TUNE,
+  TIMER_EXPIRED};
 
 enum WeatherUnit{TEMPERATURE, 
     HUMIDITY, 
@@ -65,9 +68,15 @@ struct SetttingsData{
   uint8_t p8_weather_update_freq = 0;
   uint8_t p9_temperature_unit = 0;
   uint8_t p10_pres_unit = 0;
-  uint8_t p11_use_speaker = 0;
+  uint8_t p11_use_speaker = 1;
 };
 
+//eeprom addresses
+const int addr_settings = 0;
+const int addr_alarm_time = sizeof(SetttingsData);
+const int addr_alarm_status = addr_alarm_time + sizeof(Time);
+
+//global variables
 MAX7219 max7219;
 BME280I2C bme;
 DS3231 rtc;
@@ -87,12 +96,14 @@ bool is_timer_launched = false;
 bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
 bool is_rtc_available = false;
+bool is_alarm_active = false;
 int blinking_zone = -1;
 SetttingsData settings;
 SensorType connected_sensor = NO_SENSOR;
 
 Time sw_time;
 Time clock_time;
+Time alarm_time;
 Time timer_time;
 Time timer_start_time;
 
@@ -111,7 +122,7 @@ void setup() {
     Serial.println(F("Setup stage"));
   #endif
 
-  load_settings(); 
+  load_eeprom_data(); 
   apply_settings();   
 
   max7219.Begin();
