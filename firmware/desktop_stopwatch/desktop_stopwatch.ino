@@ -8,7 +8,7 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
 #define VERSION "1.1.0"
 #define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - no
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
