@@ -165,14 +165,14 @@ void edit_settings(){
 
     if (button2.step() || button2.click()){
       if (current_param == 1)
-        current_param = 11;
+        current_param = 13;
       else
         current_param --;
       display_parameter(current_param);
     }
 
     if (button3.step() || button3.click()){
-      if (current_param == 11)
+      if (current_param == 13)
         current_param = 1;
       else
         current_param ++;
@@ -218,6 +218,12 @@ void edit_settings(){
         break;
         case 11:
           settings.p11_use_speaker = input_uint8(settings.p11_use_speaker, 0, 1, false);
+        break;
+        case 12:
+          settings.p12_alarm_duration = input_uint8(settings.p12_alarm_duration, 0, 255, false);
+        break;
+        case 13:
+          settings.p13_snooze_duration = input_uint8(settings.p13_snooze_duration, 0, 255, false);
         break;
       }
       display_parameter(current_param);

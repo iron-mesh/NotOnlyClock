@@ -30,7 +30,7 @@ void set_mode(Modes mode){
     break;
     case ALARM:
       set_display_blinking(false);
-      buzzer_timer.stop();      
+      buzzer_timer.stop();  
     break;
   }
 
@@ -47,6 +47,7 @@ void set_mode(Modes mode){
     break;
     case ALARM_TUNE:
       set_display_blinking(true);
+      // is_alarm_snooze = false;
     break;
     case TIMER_TUNE:
       is_timer_launched = false;
@@ -63,7 +64,9 @@ void set_mode(Modes mode){
     case ALARM:
       set_display_blinking(true);
       switch_display(true);
-      buzzer_timer.start();      
+      buzzer_timer.start();
+      if (settings.p12_alarm_duration > 0)
+        alarm_off_counter = 60 * settings.p12_alarm_duration;
     break;
   }
 

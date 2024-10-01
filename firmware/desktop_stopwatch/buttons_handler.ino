@@ -51,13 +51,20 @@ void handle_buttons(){
       return ;
       }
       if (button2.holding() && button3.holding()){
-        is_alarm_active = !is_alarm_active;
-        if (is_alarm_active)
-          display_text("AL ON");
-        else
-          display_text("AL OFF");
+        if (!is_alarm_snooze){
+          is_alarm_active = !is_alarm_active;
+          if (is_alarm_active)
+            display_text("AL ON");
+          else{
+            display_text("AL OFF");
+            is_alarm_snooze = false;
+          }
+          save_alarm();           
+        } else {
+          is_alarm_snooze = false;
+          display_text("SN OFF");
+        }
         delay(2000); 
-        save_alarm(); 
         call_display_update();
         return;
       }
@@ -202,13 +209,27 @@ void handle_buttons(){
       if (button2.release())
         change_wpage(-1, true);
     
-      if (button3.release()){
+      if (button3.release())
         change_wpage(1, true);
     break;
 
     case ALARM:
-      if(button2.release())
+      if (button1.release() || button2.release() || button3.release()){        
+        if(settings.p13_snooze_duration > 0){
+          alarm_snooze_counter = 60 * settings.p13_snooze_duration;
+          is_alarm_snooze = true;
+          set_mode(CLOCK);
+          display_text("SLEEP");
+          delay(2000);
+        }
+      }
+
+      if (button2.holding() && button3.holding()){    
+        reset_buttons();
         set_mode(CLOCK);
+        display_text("9OOd dA4");
+        delay(2000);
+      }        
     break;
 
   }

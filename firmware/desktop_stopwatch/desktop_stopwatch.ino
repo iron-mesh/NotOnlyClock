@@ -13,7 +13,7 @@
 #define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - no
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
-#define INIT_KEY 12// key for eeprom settings storage
+#define INIT_KEY 16// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
@@ -69,6 +69,8 @@ struct SetttingsData{
   uint8_t p9_temperature_unit = 0;
   uint8_t p10_pres_unit = 0;
   uint8_t p11_use_speaker = 1;
+  uint8_t p12_alarm_duration = 30;
+  uint8_t p13_snooze_duration = 10;
 };
 
 //eeprom addresses
@@ -97,9 +99,12 @@ bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
 bool is_rtc_available = false;
 bool is_alarm_active = false;
+bool is_alarm_snooze = false;
 int blinking_zone = -1;
 SetttingsData settings;
 SensorType connected_sensor = NO_SENSOR;
+volatile uint16_t alarm_off_counter = 0;
+volatile uint16_t alarm_snooze_counter = 0;
 
 Time sw_time;
 Time clock_time;

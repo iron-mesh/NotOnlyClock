@@ -59,6 +59,22 @@ ISR(TIMER1_A){
     }
   }
 
+  if (is_alarm_snooze && is_alarm_active){
+    if (alarm_snooze_counter > 0)
+      alarm_snooze_counter --;
+    else {
+      is_alarm_snooze = false;
+      set_mode(ALARM);
+    }
+  }
+
+  if (current_mode == ALARM && settings.p12_alarm_duration > 0){
+    if (alarm_off_counter > 0)
+      alarm_off_counter --;
+    else
+      set_mode(CLOCK);
+  }
+
   if (is_timer_launched){
     decrease_time(timer_time);
     if ((timer_time.h + timer_time.m + timer_time.s) == 0 && current_mode != ALARM) 
