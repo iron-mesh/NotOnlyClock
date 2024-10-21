@@ -1,7 +1,9 @@
 MIT License
 
-Copyright (c) 2024 IronMesh (Ivan Balakirev)
-Website: www.ironmesh.ru
+Copyright (c) 2024 Ivan Balakirev (IronMesh)
+Website: 
+    www.wiki.ironmesh.ru
+    www.ironmesh.ru
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

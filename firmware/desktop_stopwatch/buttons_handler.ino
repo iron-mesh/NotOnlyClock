@@ -219,7 +219,7 @@ void handle_buttons(){
           alarm_snooze_counter = 60 * settings.p13_snooze_duration;
           is_alarm_snooze = true;
           set_mode(CLOCK);
-          display_text("SLEEP");
+          display_text("SNOO2E");
           delay(2000);
         }
       }
