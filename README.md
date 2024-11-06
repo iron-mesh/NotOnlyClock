@@ -1,10 +1,12 @@
 
 # NotOnlyClock
-[![Foo](https://img.shields.io/badge/Website-Wiki.IronMesh.ru-blue.svg?style=flat-square)](https://wiki.ironmesh.ru/) 
-[![Foo](https://img.shields.io/badge/Website-Product_Page-blue.svg?style=flat-square)](https://wiki.ironmesh.ru/personal_blog:diy:not-only-clock:last-version:main) 
-[![Foo](https://img.shields.io/badge/%F0%9F%AA%99-Thank_the_Developer-important.svg?style=flat-square)](https://ironmesh.ru/other/support-projects) 
 
-[![Foo](https://img.shields.io/badge/SUBSCRIBE-TO%20UPDATES-brightgreen.svg?style=social&logo=telegram&color=blue)](https://t.me/ironmesh_studio_rus)
+[![Foo](https://img.shields.io/badge/Website-Wiki.IronMesh.ru-blue.svg?style=flat-square)](https://wiki.ironmesh.ru/) 
+[![Foo](https://img.shields.io/badge/Website-Cтраница_Проекта-blue.svg?style=flat-square)](https://wiki.ironmesh.ru/personal_blog:diy:not-only-clock:last-version:main) 
+[![Foo](https://img.shields.io/badge/%F0%9F%AA%99-%d0%90%d0%b2%d1%82%d0%be%d1%80%d1%83%20%d0%bd%d0%b0%20%d0%ba%d0%be%d1%84%d0%b5-important.svg?style=flat-square)](https://ironmesh.ru/ru/other/support-projects) 
+
+[![Foo](https://img.shields.io/badge/ПОДПИСАТЬСЯ-НА%20ОБНОВЛЕНИЯ-brightgreen.svg?style=social&logo=telegram&color=blue)](https://t.me/ironmesh_studio_rus)
+
 
 <img src="imgs/NOT ONLY CLOCK preview.jpg" width="600">
 
@@ -18,4 +20,4 @@
     -пользовательские настройки для задания поведения устройства;
     -(открытый исходный код, что позволяет добавлять свои функции).
 
-Переходите на [страницу проекта](https://wiki.ironmesh.ru/personal_blog:diy:not-only-clock:last-version:main), чтобы узнать как собрать свой экземпляр данного устройства и как им пользоваться.
+Переходите на [Страницу Проекта](https://wiki.ironmesh.ru/personal_blog:diy:not-only-clock:last-version:main), чтобы узнать как собрать свой экземпляр данного устройства и как им пользоваться.
