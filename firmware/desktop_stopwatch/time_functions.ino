@@ -42,10 +42,6 @@ bool curr_hour_in_range(){
 }
 
 ISR(TIMER1_A){
-  if (is_stopwatch_launched){
-    increase_time(sw_time, 99);
-    if (current_mode == STOPWATCH) call_display_update();
-  }
 
   if (current_mode != CLOCK_TUNE){
     uint8_t prev_min = clock_time.m;
@@ -58,6 +54,26 @@ ISR(TIMER1_A){
         set_mode(ALARM);
     }
   }
+
+  for(int i = 0; i < UNIT_ARR_SIZE; i++){
+    //handle stopwatches
+    if (stopwatches[i].is_launched)
+      increase_time(stopwatches[i].time, 99);
+    //handle timers
+    if (timers[i].is_launched){
+      decrease_time(timers[i].time);
+      Time t = timers[i].time;
+      if ((t.h + t.m + t.s) == 0 && current_mode != ALARM){
+        timers[i].is_expired = true;
+        timers[i].is_launched = false;
+        set_mode(TIMER_EXPIRED);
+        call_display_update();
+      }        
+    }
+  }
+  if ((current_mode == STOPWATCH && stopwatches[current_stopwatch].is_launched) ||
+    (current_mode == TIMER && timers[current_timer].is_launched) )  
+      call_display_update();
 
   if (is_alarm_snooze && is_alarm_active){
     if (alarm_snooze_counter > 0)
@@ -73,14 +89,6 @@ ISR(TIMER1_A){
       alarm_off_counter --;
     else
       set_mode(CLOCK);
-  }
-
-  if (is_timer_launched){
-    decrease_time(timer_time);
-    if ((timer_time.h + timer_time.m + timer_time.s) == 0 && current_mode != ALARM) 
-      set_mode(TIMER_EXPIRED);
-    if (current_mode == TIMER) 
-      call_display_update();
   }
 
 }

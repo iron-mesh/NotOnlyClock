@@ -8,15 +8,16 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
-#define VERSION "1.1.0"
-#define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - not
+#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define VERSION "1.2.0d"
+#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - not
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
 #define INIT_KEY 16// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
+#define DOT_BLINK_PERIOD 500 
 #define BTN_STEP_TIMEOUT 80
 
 #define BUZZER_PIN 5 // speaker pin
@@ -33,10 +34,12 @@
 #endif
 
 //types definitions
-enum Modes{STOPWATCH,
-  CLOCK,
+enum Modes{  
+  STOPWATCH, 
   TIMER,
   WEATHER,
+  COUNTER,
+  CLOCK,
   ALARM,
   CLOCK_TUNE, 
   TIMER_TUNE,
@@ -55,6 +58,17 @@ struct Time{
   uint8_t h = 0;
   uint8_t m = 0;
   uint8_t s = 0;
+};
+
+struct StopwatchUnit{
+  bool is_launched = false;
+  Time time;
+};
+
+struct TimerUnit{
+  bool is_launched = false;
+  bool is_expired = false;
+  Time time, start_time;
 };
 
 struct SetttingsData{
@@ -87,30 +101,33 @@ TimerMs btn_handler_timer(50, 1, 0);
 TimerMs wpage_timer;
 TimerMs weather_update_timer; 
 TimerMs display_blink_timer(DISPLAY_BLINK_PERIOD); 
-TimerMs buzzer_timer(BUZZER_DURATION + BUZZER_DELAY); 
+TimerMs buzzer_timer(BUZZER_DURATION + BUZZER_DELAY);
+TimerMs dot_blink_timer(DOT_BLINK_PERIOD); 
 
 Modes current_mode = CLOCK;
 WeatherUnit current_weat_page = TEMPERATURE;
 
 volatile bool do_display_update = true; 
-bool is_stopwatch_launched = false; 
-bool is_timer_launched = false; 
 bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
 bool is_rtc_available = false;
 bool is_alarm_active = false;
 bool is_alarm_snooze = false;
+bool show_active_units_dots = false;
 int blinking_zone = -1;
 SetttingsData settings;
 SensorType connected_sensor = NO_SENSOR;
 volatile uint16_t alarm_off_counter = 0;
 volatile uint16_t alarm_snooze_counter = 0;
+uint8_t current_stopwatch = 0;
+uint8_t current_timer = 0;
+int32_t counter_mode_value = 0;
 
-Time sw_time;
 Time clock_time;
 Time alarm_time;
-Time timer_time;
-Time timer_start_time;
+const uint8_t UNIT_ARR_SIZE = 8;
+StopwatchUnit stopwatches[UNIT_ARR_SIZE];
+TimerUnit timers[UNIT_ARR_SIZE];
 
 char disp_buf[17];
 
@@ -127,15 +144,14 @@ void setup() {
     Serial.println(F("Setup stage"));
   #endif
 
-  load_eeprom_data(); 
-  apply_settings();   
-
   max7219.Begin();
+
+  load_eeprom_data(); 
+  apply_settings();
 
   Wire.begin();
   Wire.setClock(10000);
 
-  DEBUG_PRINTLN(F("Sensor init"));
   if (bme.begin()){
     switch(bme.chipModel()) {
       case BME280::ChipModel_BME280:
@@ -150,16 +166,13 @@ void setup() {
   #if (USE_RTC_MODULE == 1)
     delay(1000); 
     is_rtc_available = rtc.begin();
-    DEBUG_PRINTLN(F("RTС init"));
   #endif  
   if (is_rtc_available){  
     if(rtc.isRunning()){
-      DEBUG_PRINTLN(F("RTС is running"));
       clock_time.h = (uint8_t)rtc.getHours();
       clock_time.m = (uint8_t)rtc.getMinutes();
       clock_time.s = (uint8_t)rtc.getSeconds();
     } else {
-      DEBUG_PRINTLN(F("RTС is NOT running"));
       rtc.setHours((unsigned int) clock_time.h);
       rtc.setMinutes((unsigned int) clock_time.m);
       rtc.setSeconds((unsigned int) clock_time.s);

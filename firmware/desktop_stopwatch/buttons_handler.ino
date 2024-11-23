@@ -26,7 +26,7 @@ void handle_buttons(){
   if (!is_display_on) return ;
   
   Modes m = current_mode;
-  if(m == CLOCK || m == STOPWATCH || m == TIMER || m == WEATHER){    
+  if(m == CLOCK || m == STOPWATCH || m == TIMER || m == WEATHER || m == COUNTER){    
     if (button1.holding() && button2.holding() && button3.holding()){    
       reset_buttons();
       edit_settings();
@@ -34,7 +34,7 @@ void handle_buttons(){
       save_settings();
     }   
 
-    if (button1.release()){
+    if (button1.click()){
       set_next_mode();
       button1.reset();
     } 
@@ -72,7 +72,8 @@ void handle_buttons(){
 
     case CLOCK_TUNE:
       if (button1.release()){
-        set_mode(CLOCK);       
+        set_mode(CLOCK);
+        button1.reset();       
       }
       if (button2.holding() && button3.click()){
         clock_time.h = 0;
@@ -94,7 +95,8 @@ void handle_buttons(){
 
     case ALARM_TUNE:
       if (button1.release()){
-        set_mode(CLOCK);       
+        set_mode(CLOCK);
+        button1.reset();      
       }
       if (button3.holding() && button2.click()){
         alarm_time.h = 0;
@@ -115,57 +117,64 @@ void handle_buttons(){
     break;
 
     case STOPWATCH:
-      if (button3.release()){
-      if (is_stopwatch_launched){
-        is_stopwatch_launched = false;
-      }
-      else{
-        is_stopwatch_launched = true;
-        call_display_update();
-      }
-    }
 
-    if (button2.release()){
-      if (!is_stopwatch_launched){
-        sw_time.h = 0;
-        sw_time.m = 0;
-        sw_time.s = 0;
+      if (button1.holdFor(1000) && button1.release()){
+        current_stopwatch = input_uint8(current_stopwatch + 1, 1, 8, false) - 1;
         call_display_update();
-      }      
-    }
+      }
+
+      if (button3.release()){
+        stopwatches[current_stopwatch].is_launched = !stopwatches[current_stopwatch].is_launched;
+        call_display_update();
+      }
+
+      if (button2.release() && !stopwatches[current_stopwatch].is_launched){        
+          stopwatches[current_stopwatch].time.h = 0;
+          stopwatches[current_stopwatch].time.m = 0;
+          stopwatches[current_stopwatch].time.s = 0;
+          call_display_update();            
+      }
     break;
 
     case TIMER:
+      if (button1.holdFor(1000) && button1.release()){
+        current_timer = input_uint8(current_timer + 1, 1, 8, false) - 1;
+        call_display_update();
+      }
+
       if (button2.holding() && button3.click()){ 
         set_mode(TIMER_TUNE);
+        reset_buttons();
         return ;
       }
       if (button3.release()){
-        if (!is_timer_launched && (timer_time.h + timer_time.m + timer_time.s) > 0){
-          is_timer_launched = true;
+        Time t = timers[current_timer].time;
+        if (!timers[current_timer].is_launched && (t.h + t.m + t.s) > 0){
+          timers[current_timer].is_launched = true;
         }else{
-          is_timer_launched = false;          
+          timers[current_timer].is_launched = false;          
         }
         call_display_update();
       }
 
-      if (button2.release() && !is_timer_launched){
-          timer_time.h = timer_start_time.h;
-          timer_time.m = timer_start_time.m;
-          timer_time.s = timer_start_time.s;
+      if (button2.release() && !timers[current_timer].is_launched){
+          timers[current_timer].time.h = timers[current_timer].start_time.h;
+          timers[current_timer].time.m = timers[current_timer].start_time.m;
+          timers[current_timer].time.s = timers[current_timer].start_time.s;
           call_display_update();
       }
     break;
 
     case TIMER_TUNE:
       if (button1.release()){
-        set_mode(TIMER);       
+        set_mode(TIMER);
+        button1.reset();      
       }      
       if (button2.holding() && button3.click()){
-        timer_start_time.h = 0;
-        timer_start_time.m = 0;
-        timer_start_time.s = 0;
-        button3.reset();
+        timers[current_timer].start_time.h = 0;
+        timers[current_timer].start_time.m = 0;
+        timers[current_timer].start_time.s = 0;
+        reset_buttons();
         call_display_update();
       }
       if (button2.click()){
@@ -178,22 +187,22 @@ void handle_buttons(){
       if (button3.click() || button3.step()){
         switch(blinking_zone){
           case 0:
-            if (timer_start_time.h >= 99) 
-              timer_start_time.h = 0;
+            if (timers[current_timer].start_time.h >= 99) 
+              timers[current_timer].start_time.h = 0;
             else 
-              timer_start_time.h ++;            
+              timers[current_timer].start_time.h ++;            
           break;
           case 3:
-            if (timer_start_time.m >= 59) 
-              timer_start_time.m = 0;
+            if (timers[current_timer].start_time.m >= 59) 
+              timers[current_timer].start_time.m = 0;
             else 
-              timer_start_time.m ++;            
+              timers[current_timer].start_time.m ++;            
           break;
           case 6:
-            if (timer_start_time.s >= 59) 
-              timer_start_time.s = 0;
+            if (timers[current_timer].start_time.s >= 59) 
+              timers[current_timer].start_time.s = 0;
             else 
-              timer_start_time.s ++;            
+              timers[current_timer].start_time.s ++;            
           break;
         }
         call_display_update();
@@ -201,8 +210,10 @@ void handle_buttons(){
     break;
 
     case TIMER_EXPIRED:
-      if(button1.release() || button2.release() || button3.release())
+      if(button1.release() || button2.release() || button3.release()){
         set_mode(TIMER);
+        reset_buttons();
+      }
     break;
 
     case WEATHER:

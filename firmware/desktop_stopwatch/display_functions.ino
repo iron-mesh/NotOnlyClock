@@ -46,53 +46,93 @@ void switch_display(bool status){
   }  
 }
 
-void send_time_to_dispbuff(Time &time, const char sep, bool show_sec){
-  if (show_sec){
-    disp_buf[0] = (time.h / 10) + 48;
-    disp_buf[1] = (time.h % 10) + 48; 
-    disp_buf[2] = sep;
-    disp_buf[3] = (time.m / 10) + 48;
-    disp_buf[4] = (time.m % 10) + 48;
-    disp_buf[5] = sep;
-    disp_buf[6] = (time.s / 10) + 48;
-    disp_buf[7] = (time.s % 10) + 48;
-  } else {
-    disp_buf[0] = sep;
-    disp_buf[1] = (time.h / 10) + 48;
-    disp_buf[2] = (time.h % 10) + 48; 
-    disp_buf[3] = sep;
-    disp_buf[4] = sep;
-    disp_buf[5] = (time.m / 10) + 48;
-    disp_buf[6] = (time.m % 10) + 48;
-    disp_buf[7] = sep;
-  }  
+void send_time_to_dispbuff(){
+  int i = 0;
+  uint8_t time_unit;
+  Time t;
+  char sep;
+  clear_display_buffer();
+  switch (current_mode){
+    case STOPWATCH:
+      t = stopwatches[current_stopwatch].time;
+      sep = '-';
+    break;
+    case TIMER:
+      t = timers[current_timer].time;
+      sep = '_';
+    break;
+    case TIMER_EXPIRED:
+      sep = '_';
+    break;
+    case TIMER_TUNE:
+      t = timers[current_timer].start_time;
+      sep = '_';
+    break;
+  }
+
+  for (int a = 0; a < UNIT_ARR_SIZE; a++){ 
+    switch(a){
+      case 0: time_unit = t.h; break;
+      case 3: time_unit = t.m; break;
+      case 6: time_unit = t.s; break;
+    }
+
+    if (a != 2 && a != 5){
+      if (a == 0 || a == 3 || a == 6)
+        disp_buf[i] = (time_unit / 10) + 48;
+      else
+        disp_buf[i] = (time_unit % 10) + 48;
+    }
+    else
+      disp_buf[i] = sep;
+    i++;
+
+    switch (current_mode){
+      case STOPWATCH:
+        if ((a == current_stopwatch) || (stopwatches[a].is_launched && show_active_units_dots)){
+          disp_buf[i] = '.';
+          i++;
+        }
+      break;
+      case TIMER:
+        if ((a == current_timer) || (timers[a].is_launched && show_active_units_dots)){
+          disp_buf[i] = '.';
+          i++;
+        }
+      break;
+      case TIMER_EXPIRED:
+        if (timers[a].is_expired){
+          disp_buf[i] = '.';
+          i++;
+        }
+      break;
+    }  
+  }
+  
 }
 
-void send_clocktime_to_dispbuff_doted(bool show_sec){
-  if (show_sec){
-    disp_buf[0] = (clock_time.h / 10) + 48;
-    disp_buf[1] = (clock_time.h % 10) + 48;
-    disp_buf[2] = '.';
-    disp_buf[3] = ' ';
-    disp_buf[4] = (clock_time.m / 10) + 48;
-    disp_buf[5] = (clock_time.m % 10) + 48;
-    disp_buf[6] = '.';
-    disp_buf[7] = ' ';
-    disp_buf[8] = (clock_time.s / 10) + 48;
-    disp_buf[9] = (clock_time.s % 10) + 48;
-    disp_buf[10] = '.';
-  } else {
-    disp_buf[0] = ' ';
-    disp_buf[1] = (clock_time.h / 10) + 48;
-    disp_buf[2] = (clock_time.h % 10) + 48;
-    disp_buf[3] = '.';
-    disp_buf[4] = ' ';
-    disp_buf[5] = ' ';
-    disp_buf[6] = (clock_time.m / 10) + 48;
-    disp_buf[7] = (clock_time.m % 10) + 48;
-    disp_buf[8] = '.';
-    disp_buf[9] = ' ';
-  }  
+void send_clocktime_to_dispbuff(Time &t, bool show_dots, bool show_secs){
+  int i = 0;
+  if (!show_secs)
+     disp_buf[i++] = ' ';
+   
+  for (int a = 0; a < 3; a++){
+    if (a == 2 && !show_secs) break;
+    uint8_t time_unit;
+    switch(a){
+      case 0: time_unit = t.h; break;
+      case 1: time_unit = t.m; break;
+      case 2: time_unit = t.s; break;
+    }
+    disp_buf[i++] = (time_unit / 10) + 48;
+    disp_buf[i++] = (time_unit % 10) + 48;
+    if(show_dots)
+      disp_buf[i++] = '.';
+    if (a == 2) break;
+    disp_buf[i++] = ' ';
+    if (a == 1 && !show_secs) break;
+    if (!show_secs) disp_buf[i++] = ' ';    
+  }
 }
 
 void update_display(){
@@ -101,18 +141,15 @@ void update_display(){
   switch (current_mode){
     case CLOCK:
     case ALARM:
-      if (is_alarm_active)
-        send_clocktime_to_dispbuff_doted(settings.p5_show_seconds_clock);
-      else      
-        send_time_to_dispbuff(clock_time, ' ', settings.p5_show_seconds_clock);
+      send_clocktime_to_dispbuff(clock_time, is_alarm_active, settings.p5_show_seconds_clock);
     break;
 
     case CLOCK_TUNE:
-      send_time_to_dispbuff(clock_time, ' ', false);
+      send_clocktime_to_dispbuff(clock_time, false, false);
     break;
 
-    case ALARM_TUNE:
-      send_time_to_dispbuff(alarm_time, ' ', false);
+    case ALARM_TUNE:      
+      send_clocktime_to_dispbuff(alarm_time, false, false);
       for(int i=2;i>0;i--)
         disp_buf[i+1] = disp_buf[i];
       disp_buf[0] = 'A';
@@ -120,16 +157,16 @@ void update_display(){
     break;
 
     case STOPWATCH:
-      send_time_to_dispbuff(sw_time, '-', true);
+      send_time_to_dispbuff();
     break;
 
     case TIMER:
     case TIMER_EXPIRED:
-      send_time_to_dispbuff(timer_time, '_', true);    
+      send_time_to_dispbuff();    
     break;
 
     case TIMER_TUNE:
-      send_time_to_dispbuff(timer_start_time, '_', true);
+      send_time_to_dispbuff();
     break;
 
     case WEATHER:
@@ -236,7 +273,6 @@ void try_change_brightness_mode(const bool force_checking){
   volatile static uint8_t prev_hour = clock_time.h;
   volatile static bool is_night_mode = false;
   if (force_checking){
-    DEBUG_PRINTLN(F("Force checking"));
     is_night_mode = curr_hour_in_range();
     if (is_night_mode)
       max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
@@ -249,12 +285,10 @@ void try_change_brightness_mode(const bool force_checking){
     if (!is_night_mode && curr_hour_in_range()){
       max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
       is_night_mode = true;
-      DEBUG_PRINTLN(F("Set night mode"));
     } 
     else if (is_night_mode && !curr_hour_in_range()){
       max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
       is_night_mode = false;
-      DEBUG_PRINTLN(F("Set day mode"));
     }
     prev_hour = clock_time.h;
   }

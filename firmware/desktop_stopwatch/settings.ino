@@ -1,23 +1,10 @@
 void save_settings(){
-  SetttingsData temp;
-  EEPROM.get(addr_settings, temp);
-  if (memcmp(&temp, &settings, sizeof(SetttingsData)) != 0) {
-    EEPROM.put(addr_settings, settings);
-    DEBUG_PRINTLN(F("Saved settings"));
-  }
+  EEPROM.put(addr_settings, settings);
 }
 
 void save_alarm(){
-  Time temp;
-  EEPROM.get(addr_alarm_time, temp);
-  if (memcmp(&temp, &alarm_time, sizeof(Time)) != 0) {
-    EEPROM.put(addr_alarm_time, alarm_time);
-    DEBUG_PRINTLN(F("Saved alarm time"));
-  }
-  if (EEPROM.read(addr_alarm_status) != is_alarm_active){
-    EEPROM.write(addr_alarm_status, is_alarm_active);
-    DEBUG_PRINTLN(F("Saved alarm status"));
-  }
+  EEPROM.put(addr_alarm_time, alarm_time);
+  EEPROM.put(addr_alarm_status, is_alarm_active);
 }
 
 void load_eeprom_data(){
@@ -59,11 +46,15 @@ uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max, const 
   else if (value > max)
     value = max;
   display_text(itoa(value, disp_text, DEC));
+  reset_buttons();
 
   while(1){
     if (!(button1.tick() || button2.tick() || button3.tick())) continue;
 
-    if (button1.release()) return value;
+    if (button1.release()) {
+      reset_buttons();
+      return value;
+    }
 
     if (button2.step() || button2.click()){
         if (value == min)

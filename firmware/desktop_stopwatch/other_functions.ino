@@ -1,6 +1,13 @@
 
 void set_mode(Modes mode){
+  if (mode == current_mode) return;
+
   switch (current_mode){
+    case TIMER:
+    case STOPWATCH:
+      dot_blink_timer.stop();
+      show_active_units_dots = false;
+    break;
     case WEATHER:
       wpage_timer.stop();
       weather_update_timer.stop();
@@ -9,7 +16,6 @@ void set_mode(Modes mode){
       set_display_blinking(false);
       try_change_brightness_mode(true);
       if (is_rtc_available){
-        DEBUG_PRINTLN(F("RTS set time"));
         rtc.setHours((unsigned int) clock_time.h);
         rtc.setMinutes((unsigned int) clock_time.m);
         rtc.setSeconds((unsigned int) clock_time.s);           
@@ -20,13 +26,23 @@ void set_mode(Modes mode){
       save_alarm();
     break;
     case TIMER_TUNE:
+      timers[current_timer].time.h = timers[current_timer].start_time.h;
+      timers[current_timer].time.m = timers[current_timer].start_time.m;
+      timers[current_timer].time.s = timers[current_timer].start_time.s;
+      blinking_zone = -1;
+      set_display_blinking(false);
+    break;
     case TIMER_EXPIRED:
       blinking_zone = -1;
       set_display_blinking(false);
       buzzer_timer.stop();
-      timer_time.h = timer_start_time.h;
-      timer_time.m = timer_start_time.m;
-      timer_time.s = timer_start_time.s;
+      for(int i = 0; i < UNIT_ARR_SIZE; i++){
+        if (!timers[i].is_expired) continue;
+        timers[i].is_expired = false;
+        timers[i].time.h = timers[i].start_time.h;
+        timers[i].time.m = timers[i].start_time.m;
+        timers[i].time.s = timers[i].start_time.s;
+      }
     break;
     case ALARM:
       set_display_blinking(false);
@@ -35,6 +51,10 @@ void set_mode(Modes mode){
   }
 
   switch (mode){
+    case TIMER:
+    case STOPWATCH:
+      dot_blink_timer.start();
+    break;    
     case WEATHER:
       if (settings.p7_wpage_change_freq > 0)
         wpage_timer.start();
@@ -50,12 +70,11 @@ void set_mode(Modes mode){
       // is_alarm_snooze = false;
     break;
     case TIMER_TUNE:
-      is_timer_launched = false;
+      timers[current_timer].is_launched = false;
       set_display_blinking(true);
       blinking_zone = 6;
     break;
     case TIMER_EXPIRED:
-      is_timer_launched = false;
       set_display_blinking(true);
       switch_display(true);
       if (settings.p11_use_speaker)
