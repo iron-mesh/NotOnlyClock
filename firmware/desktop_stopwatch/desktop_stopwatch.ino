@@ -121,7 +121,7 @@ volatile uint16_t alarm_off_counter = 0;
 volatile uint16_t alarm_snooze_counter = 0;
 uint8_t current_stopwatch = 0;
 uint8_t current_timer = 0;
-int32_t counter_mode_value = 0;
+long counter_mode_value = 0;
 
 Time clock_time;
 Time alarm_time;

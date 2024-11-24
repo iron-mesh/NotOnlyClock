@@ -1,4 +1,5 @@
 
+
 void set_mode(Modes mode){
   if (mode == current_mode) return;
 
@@ -106,9 +107,12 @@ void set_next_mode(){
       if (connected_sensor != NO_SENSOR)
         set_mode(WEATHER);
       else
-        set_mode(CLOCK);
+        set_mode(COUNTER);
     break;
     case WEATHER:
+      set_mode(COUNTER);
+    break;
+    case COUNTER:
       set_mode(CLOCK);
     break;
   }

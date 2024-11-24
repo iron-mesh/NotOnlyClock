@@ -118,7 +118,7 @@ void handle_buttons(){
 
     case STOPWATCH:
 
-      if (button1.holdFor(1000) && button1.release()){
+      if (button1.pressFor(1000) && button1.release()){
         current_stopwatch = input_uint8(current_stopwatch + 1, 1, 8, false) - 1;
         call_display_update();
       }
@@ -137,7 +137,7 @@ void handle_buttons(){
     break;
 
     case TIMER:
-      if (button1.holdFor(1000) && button1.release()){
+      if (button1.pressFor(1000) && button1.release()){
         current_timer = input_uint8(current_timer + 1, 1, 8, false) - 1;
         call_display_update();
       }
@@ -241,6 +241,29 @@ void handle_buttons(){
         display_text("9OOd dA4");
         delay(2000);
       }        
+    break;
+    
+    case COUNTER:
+      if(button2.release()){
+        if (counter_mode_value > -9999999)
+          counter_mode_value --;
+        else
+          counter_mode_value = 0;
+        call_display_update();
+      }
+
+      if(button3.release()){
+        if (counter_mode_value < 99999999)
+          counter_mode_value ++;
+        else
+          counter_mode_value = 0;
+        call_display_update();
+      }
+
+      if (counter_mode_value != 0 && button2.pressFor(2000) && button3.pressFor(2000)){
+        counter_mode_value = 0;
+        call_display_update();
+      }
     break;
 
   }

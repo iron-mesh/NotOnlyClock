@@ -172,10 +172,16 @@ void update_display(){
     case WEATHER:
       get_weather_param_str(current_weat_page).toCharArray(disp_buf, 9);
     break;
+
+    case COUNTER:
+      clear_display_buffer();
+      ltoa(counter_mode_value, disp_buf, DEC);      
+    break;
   }
   
   invert_buf();
-  if (current_mode == WEATHER) max7219.Clear();
+  if (current_mode == WEATHER || current_mode == COUNTER) 
+    max7219.Clear();
   max7219.DisplayText(disp_buf, ALIGNMENT_DISP);
  
   do_display_update = false;
