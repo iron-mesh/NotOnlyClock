@@ -1,7 +1,17 @@
 
+bool is_mode_available(Modes mode){
+  byte am = settings.p14_active_modes;
+  if (mode >= 0 && mode <= 3 && !bitRead(am, mode))
+    return false;
+
+  if (mode == WEATHER && connected_sensor == NO_SENSOR)
+    return false;
+
+  return true;
+}
 
 void set_mode(Modes mode){
-  if (mode == current_mode) return;
+  if (mode == current_mode || !is_mode_available(mode)) return;
 
   switch (current_mode){
     case TIMER:
@@ -96,25 +106,15 @@ void set_mode(Modes mode){
 }
 
 void set_next_mode(){
-  switch(current_mode){
-    case CLOCK:
-      set_mode(STOPWATCH);
-    break;
-    case STOPWATCH:
-      set_mode(TIMER);
-    break;
-    case TIMER:
-      if (connected_sensor != NO_SENSOR)
-        set_mode(WEATHER);
-      else
-        set_mode(COUNTER);
-    break;
-    case WEATHER:
-      set_mode(COUNTER);
-    break;
-    case COUNTER:
-      set_mode(CLOCK);
-    break;
+  if (current_mode > 4) return ;
+  uint8_t mode = current_mode;
+
+  while(1){
+    mode = (mode == 4)? 0 : mode + 1; 
+    if(is_mode_available(mode)){
+      set_mode(mode);
+      return ;
+    }
   }
 }
 

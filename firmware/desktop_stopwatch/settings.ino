@@ -35,7 +35,14 @@ void apply_settings(){
     weather_update_timer.stop();
 
   try_change_brightness_mode(true);
-  // parameter 4 doesnt exist
+  
+  if (!is_mode_available(current_mode)) 
+    set_mode(CLOCK);
+  for(int i = 0; i < UNIT_ARR_SIZE; i++){    
+    stopwatches[i].is_launched = false;
+    timers[i].is_launched = false;
+    timers[i].is_expired = false;
+  }
 }
 
 uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max, const bool change_bright){
@@ -74,7 +81,6 @@ uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max, const 
         if (change_bright) max7219.MAX7219_SetBrightness(value);
     }
   }
-
 }
 
 uint32_t input_ulong (uint32_t value){
@@ -139,7 +145,8 @@ void edit_settings(){
 
   is_auto_brightness_allowed = false;
   max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
-
+  
+  const uint8_t LAST_PARAM = 14;
   uint8_t current_param = 1;
   display_parameter(current_param);
   while(1){
@@ -156,14 +163,14 @@ void edit_settings(){
 
     if (button2.step() || button2.click()){
       if (current_param == 1)
-        current_param = 13;
+        current_param = LAST_PARAM;
       else
         current_param --;
       display_parameter(current_param);
     }
 
     if (button3.step() || button3.click()){
-      if (current_param == 13)
+      if (current_param == LAST_PARAM)
         current_param = 1;
       else
         current_param ++;
@@ -215,6 +222,9 @@ void edit_settings(){
         break;
         case 13:
           settings.p13_snooze_duration = input_uint8(settings.p13_snooze_duration, 0, 255, false);
+        break;
+        case 14:
+          settings.p14_active_modes = input_uint8(settings.p14_active_modes, 0, 15, false);
         break;
       }
       display_parameter(current_param);

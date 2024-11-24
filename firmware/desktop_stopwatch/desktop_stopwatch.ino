@@ -8,12 +8,12 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
 #define VERSION "1.2.0d"
-#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - not
+#define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - not
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
-#define INIT_KEY 16// key for eeprom settings storage
+#define INIT_KEY 12// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
@@ -85,6 +85,7 @@ struct SetttingsData{
   uint8_t p11_use_speaker = 1;
   uint8_t p12_alarm_duration = 30;
   uint8_t p13_snooze_duration = 10;
+  byte p14_active_modes = 15;
 };
 
 //eeprom addresses
