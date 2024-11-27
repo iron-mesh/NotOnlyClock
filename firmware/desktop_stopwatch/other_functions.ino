@@ -40,11 +40,9 @@ void set_mode(Modes mode){
       timers[current_timer].time.h = timers[current_timer].start_time.h;
       timers[current_timer].time.m = timers[current_timer].start_time.m;
       timers[current_timer].time.s = timers[current_timer].start_time.s;
-      blinking_zone = -1;
       set_display_blinking(false);
     break;
     case TIMER_EXPIRED:
-      blinking_zone = -1;
       set_display_blinking(false);
       buzzer_timer.stop();
       for(int i = 0; i < UNIT_ARR_SIZE; i++){
@@ -58,6 +56,11 @@ void set_mode(Modes mode){
     case ALARM:
       set_display_blinking(false);
       buzzer_timer.stop();  
+    break;
+    case STOPWATCH_SELECT: 
+    case TIMER_SELECT:
+    case COUNTER_SELECT:
+      set_display_blinking(false);
     break;
   }
 
@@ -77,8 +80,8 @@ void set_mode(Modes mode){
       clock_time.s = 0;
     break;
     case ALARM_TUNE:
+      blinking_zone = -1;
       set_display_blinking(true);
-      // is_alarm_snooze = false;
     break;
     case TIMER_TUNE:
       timers[current_timer].is_launched = false;
@@ -86,17 +89,25 @@ void set_mode(Modes mode){
       blinking_zone = 6;
     break;
     case TIMER_EXPIRED:
+      blinking_zone = -1;
       set_display_blinking(true);
       switch_display(true);
       if (settings.p11_use_speaker)
         buzzer_timer.start();      
     break;
     case ALARM:
+      blinking_zone = -1;
       set_display_blinking(true);
       switch_display(true);
       buzzer_timer.start();
       if (settings.p12_alarm_duration > 0)
         alarm_off_counter = 60 * settings.p12_alarm_duration;
+    break;
+    case STOPWATCH_SELECT: 
+    case TIMER_SELECT:
+    case COUNTER_SELECT:
+      blinking_zone = -1;
+      set_display_blinking(true);
     break;
   }
 

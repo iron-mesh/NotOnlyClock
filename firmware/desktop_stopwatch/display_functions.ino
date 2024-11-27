@@ -54,10 +54,12 @@ void send_time_to_dispbuff(){
   clear_display_buffer();
   switch (current_mode){
     case STOPWATCH:
+    case STOPWATCH_SELECT:
       t = stopwatches[current_stopwatch].time;
       sep = '-';
     break;
     case TIMER:
+    case TIMER_SELECT:
       t = timers[current_timer].time;
       sep = '_';
     break;
@@ -89,22 +91,18 @@ void send_time_to_dispbuff(){
 
     switch (current_mode){
       case STOPWATCH:
-        if ((a == current_stopwatch) || (stopwatches[a].is_launched && show_active_units_dots)){
-          disp_buf[i] = '.';
-          i++;
-        }
+      case STOPWATCH_SELECT:
+        if ((a == current_stopwatch) || (stopwatches[a].is_launched && show_active_units_dots))
+          disp_buf[i++] = '.';
       break;
       case TIMER:
-        if ((a == current_timer) || (timers[a].is_launched && show_active_units_dots)){
-          disp_buf[i] = '.';
-          i++;
-        }
+      case TIMER_SELECT:
+        if ((a == current_timer) || (timers[a].is_launched && show_active_units_dots))
+          disp_buf[i++] = '.';
       break;
       case TIMER_EXPIRED:
-        if (timers[a].is_expired){
-          disp_buf[i] = '.';
-          i++;
-        }
+        if (timers[a].is_expired)
+          disp_buf[i++] = '.';
       break;
     }  
   }
@@ -157,10 +155,12 @@ void update_display(){
     break;
 
     case STOPWATCH:
+    case STOPWATCH_SELECT:
       send_time_to_dispbuff();
     break;
 
     case TIMER:
+    case TIMER_SELECT:
     case TIMER_EXPIRED:
       send_time_to_dispbuff();    
     break;
@@ -174,8 +174,13 @@ void update_display(){
     break;
 
     case COUNTER:
+    case COUNTER_SELECT:
       clear_display_buffer();
-      ltoa(counter_mode_value, disp_buf, DEC);      
+      ltoa(counter_mode_values[current_counter], disp_buf, DEC);
+      for (int i = strlen(disp_buf); i < 7; i++){
+        disp_buf[i] = ' ';
+      }
+      disp_buf[7] = (current_counter + 1) + 48;      
     break;
   }
   

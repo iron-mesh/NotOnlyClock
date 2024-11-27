@@ -9,7 +9,7 @@
 
 // firmware configuration
 #define DEBUG 0 // 1 - debug is activated, 0 - deactivated
-#define VERSION "1.2.0d"
+#define VERSION "1.2.0"
 #define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - not
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
@@ -33,6 +33,7 @@
   #define ALIGNMENT_DISP  0
 #endif
 
+
 //types definitions
 enum Modes{  
   STOPWATCH, 
@@ -44,7 +45,10 @@ enum Modes{
   CLOCK_TUNE, 
   TIMER_TUNE,
   ALARM_TUNE,
-  TIMER_EXPIRED};
+  TIMER_EXPIRED,
+  STOPWATCH_SELECT,
+  TIMER_SELECT,
+  COUNTER_SELECT};
 
 enum WeatherUnit{TEMPERATURE, 
     HUMIDITY, 
@@ -122,13 +126,14 @@ volatile uint16_t alarm_off_counter = 0;
 volatile uint16_t alarm_snooze_counter = 0;
 uint8_t current_stopwatch = 0;
 uint8_t current_timer = 0;
-long counter_mode_value = 0;
+uint8_t current_counter = 0;
 
 Time clock_time;
 Time alarm_time;
 const uint8_t UNIT_ARR_SIZE = 8;
 StopwatchUnit stopwatches[UNIT_ARR_SIZE];
 TimerUnit timers[UNIT_ARR_SIZE];
+long counter_mode_values[9];
 
 char disp_buf[17];
 

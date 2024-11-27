@@ -1,3 +1,24 @@
+
+bool ask_questions(char *msg){
+  bool answer = false;
+  reset_buttons();
+  display_text(msg);
+  while(1){
+    if (!(button1.tick() || button3.tick())) continue;
+
+    if (button1.click())
+      break;
+
+    if (button3.click()){
+      answer = true;
+      break;
+    }      
+  }
+  reset_buttons();
+  call_display_update();
+  return answer;
+}
+
 void init_buttons(){
   button1.setStepTimeout(BTN_STEP_TIMEOUT);
   button2.setStepTimeout(BTN_STEP_TIMEOUT);
@@ -119,8 +140,8 @@ void handle_buttons(){
     case STOPWATCH:
 
       if (button1.pressFor(1000) && button1.release()){
-        current_stopwatch = input_uint8(current_stopwatch + 1, 1, 8, false) - 1;
-        call_display_update();
+        set_mode(STOPWATCH_SELECT);
+        button1.reset();
       }
 
       if (button3.release()){
@@ -136,16 +157,32 @@ void handle_buttons(){
       }
     break;
 
+    case STOPWATCH_SELECT:
+      if (button1.release()){
+        set_mode(STOPWATCH);
+        button1.reset();
+      }
+
+      if (button2.release()){
+        current_stopwatch = (current_stopwatch > 0) ? current_stopwatch - 1 : UNIT_ARR_SIZE - 1;
+        call_display_update();
+      }
+
+      if (button3.release()){
+        current_stopwatch = (current_stopwatch < (UNIT_ARR_SIZE - 1)) ? current_stopwatch + 1 : 0;
+        call_display_update();
+      }
+    break;
+
     case TIMER:
       if (button1.pressFor(1000) && button1.release()){
-        current_timer = input_uint8(current_timer + 1, 1, 8, false) - 1;
-        call_display_update();
+        set_mode(TIMER_SELECT);
+        button1.reset();
       }
 
       if (button2.holding() && button3.click()){ 
         set_mode(TIMER_TUNE);
         reset_buttons();
-        return ;
       }
       if (button3.release()){
         Time t = timers[current_timer].time;
@@ -165,10 +202,27 @@ void handle_buttons(){
       }
     break;
 
+    case TIMER_SELECT:
+      if (button1.release()){        
+        set_mode(TIMER);
+        button1.reset();
+      }        
+
+      if (button2.release()){
+        current_timer = (current_timer > 0) ? current_timer - 1 : UNIT_ARR_SIZE - 1;
+        call_display_update();
+      }
+
+      if (button3.release()){
+        current_timer = (current_timer < (UNIT_ARR_SIZE - 1)) ? current_timer + 1 : 0;
+        call_display_update();
+      }
+    break;
+
     case TIMER_TUNE:
       if (button1.release()){
         set_mode(TIMER);
-        button1.reset();      
+        button1.reset();  
       }      
       if (button2.holding() && button3.click()){
         timers[current_timer].start_time.h = 0;
@@ -235,7 +289,7 @@ void handle_buttons(){
         }
       }
 
-      if (button2.holding() && button3.holding()){    
+      if (button2.holding() && button3.holding()){ 
         reset_buttons();
         set_mode(CLOCK);
         display_text("9OOd dA4");
@@ -244,27 +298,49 @@ void handle_buttons(){
     break;
     
     case COUNTER:
+      if (button1.pressFor(1000) && button1.release()){
+        set_mode(COUNTER_SELECT);
+        button1.reset();
+      }
+
+      if (counter_mode_values[current_counter] != 0 && button2.pressing() && button3.release()){
+        if (ask_questions("reset"))
+          counter_mode_values[current_counter] = 0;      
+      }
+      
       if(button2.release()){
-        if (counter_mode_value > -9999999)
-          counter_mode_value --;
+        if (counter_mode_values[current_counter] > -99999)
+          counter_mode_values[current_counter] --;
         else
-          counter_mode_value = 0;
+          counter_mode_values[current_counter] = 0;
         call_display_update();
       }
 
       if(button3.release()){
-        if (counter_mode_value < 99999999)
-          counter_mode_value ++;
+        if (counter_mode_values[current_counter] < 999999)
+          counter_mode_values[current_counter] ++;
         else
-          counter_mode_value = 0;
-        call_display_update();
-      }
-
-      if (counter_mode_value != 0 && button2.pressFor(2000) && button3.pressFor(2000)){
-        counter_mode_value = 0;
+          counter_mode_values[current_counter] = 0;
         call_display_update();
       }
     break;
+
+    case COUNTER_SELECT:
+      if (button1.release()){
+        set_mode(COUNTER);
+        button1.reset();
+      }
+
+      if (button2.release()){
+        current_counter = (current_counter > 0) ? current_counter - 1 : 8;
+        call_display_update();
+      }
+
+      if (button3.release()){
+        current_counter = (current_counter < (8)) ? current_counter + 1 : 0;
+        call_display_update();
+      }
+    break;   
 
   }
 

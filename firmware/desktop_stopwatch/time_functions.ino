@@ -71,8 +71,8 @@ ISR(TIMER1_A){
       }        
     }
   }
-  if ((current_mode == STOPWATCH && stopwatches[current_stopwatch].is_launched) ||
-    (current_mode == TIMER && timers[current_timer].is_launched) )  
+  if (((current_mode == STOPWATCH || current_mode == STOPWATCH_SELECT) && stopwatches[current_stopwatch].is_launched) ||
+    ((current_mode == TIMER || current_mode == TIMER_SELECT) && timers[current_timer].is_launched) )  
       call_display_update();
 
   if (is_alarm_snooze && is_alarm_active){
