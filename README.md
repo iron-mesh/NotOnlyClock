@@ -7,8 +7,7 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/iron-mesh/NotOnlyClock/total?style=flat-square&label=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BE%D0%BA)
 
 
-![Discord](https://img.shields.io/discord/1042751086093684736?style=flat-square&label=%D0%A4%D0%BE%D1%80%D1%83%D0%BC&link=https%3A%2F%2Fdiscord.gg%2Fh7Mmwg2DcZ)
-
+[![Foo](https://img.shields.io/discord/1042751086093684736?style=flat-square&label=%D0%A4%D0%BE%D1%80%D1%83%D0%BC)](https://discord.gg/h7Mmwg2DcZ) 
 
 [![Foo](https://img.shields.io/badge/ПОДПИСАТЬСЯ-НА%20ОБНОВЛЕНИЯ-brightgreen.svg?style=social&logo=telegram&color=blue)](https://t.me/ironmesh_studio_rus)
 
