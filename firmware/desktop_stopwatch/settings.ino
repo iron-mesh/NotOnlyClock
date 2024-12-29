@@ -12,13 +12,14 @@ void load_eeprom_data(){
     save_settings();
     save_alarm();
     EEPROM.write(INIT_KEY_ADDR, INIT_KEY);
+    save_pomodoro_settings();
   }else{
     EEPROM.get(addr_settings, settings);
     EEPROM.get(addr_alarm_time, alarm_time);
     is_alarm_active = EEPROM.read(addr_alarm_status);
+    EEPROM.get(addr_pomodoro_settings, pomodoro.settings);
   }
 }
-
 
 void apply_settings(){
   max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
@@ -38,10 +39,17 @@ void apply_settings(){
   
   if (!is_mode_available(current_mode)) 
     set_mode(CLOCK);
-  for(int i = 0; i < UNIT_ARR_SIZE; i++){    
-    stopwatches[i].is_launched = false;
-    timers[i].is_launched = false;
-    timers[i].is_expired = false;
+
+  if (!is_mode_available(POMODORO))
+    pomodoro.is_timer_launched = false;
+
+  for(int i = 0; i < UNIT_ARR_SIZE; i++){
+    if (!is_mode_available(STOPWATCH) && stopwatches[i].is_launched)    
+      stopwatches[i].is_launched = false;
+    if (!is_mode_available(TIMER)){
+      timers[i].is_launched = false;
+      timers[i].is_expired = false;
+    }    
   }
 }
 
@@ -224,7 +232,7 @@ void edit_settings(){
           settings.p13_snooze_duration = input_uint8(settings.p13_snooze_duration, 0, 255, false);
         break;
         case 14:
-          settings.p14_active_modes = input_uint8(settings.p14_active_modes, 0, 15, false);
+          settings.p14_active_modes = input_uint8(settings.p14_active_modes, 0, 31, false);
         break;
       }
       display_parameter(current_param);

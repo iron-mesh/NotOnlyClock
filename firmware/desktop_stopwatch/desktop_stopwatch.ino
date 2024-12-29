@@ -8,12 +8,12 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 0 // 1 - debug is activated, 0 - deactivated
-#define VERSION "1.2.0"
-#define DISPLAY_INVERTED 1 // 1 - inverted connection of segments to MAX7219, 0 - not
+#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define VERSION "1.3.0d"
+#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - not
 #define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
 
-#define INIT_KEY 12// key for eeprom settings storage
+#define INIT_KEY 6// key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
 #define DISPLAY_BLINK_PERIOD 200 
@@ -39,6 +39,7 @@ enum Modes{
   STOPWATCH, 
   TIMER,
   WEATHER,
+  POMODORO,
   COUNTER,
   CLOCK,
   ALARM,
@@ -48,7 +49,9 @@ enum Modes{
   TIMER_EXPIRED,
   STOPWATCH_SELECT,
   TIMER_SELECT,
-  COUNTER_SELECT};
+  COUNTER_SELECT,
+  POMODORO_SETTINGS,
+  POMODORO_TWEAKTIME};
 
 enum WeatherUnit{TEMPERATURE, 
     HUMIDITY, 
@@ -89,13 +92,14 @@ struct SetttingsData{
   uint8_t p11_use_speaker = 1;
   uint8_t p12_alarm_duration = 30;
   uint8_t p13_snooze_duration = 10;
-  byte p14_active_modes = 15;
+  byte p14_active_modes = 31;
 };
 
 //eeprom addresses
 const int addr_settings = 0;
 const int addr_alarm_time = sizeof(SetttingsData);
 const int addr_alarm_status = addr_alarm_time + sizeof(Time);
+const int addr_pomodoro_settings = addr_alarm_status + sizeof(bool);
 
 //global variables
 MAX7219 max7219;
@@ -141,6 +145,39 @@ Button button1 = Button(2);
 Button button2 = Button(3);
 Button button3 = Button(4);
 
+struct Pomodoro{
+  struct {
+    uint16_t pomodoro_time = 25;
+    uint16_t chill_time = 5;
+    uint8_t pomodoro_count = 4; 
+    uint16_t big_chill_time = 30;
+    uint8_t pomodoro_auto_start = 1;
+    uint8_t chill_auto_start = 1;
+  } settings;
+
+  enum class TunePages{
+    POMODORO_TIME,
+    CHILL_TIME,
+    POMODORO_COUNT,
+    BIG_CHILL_TIME,
+    POMODORO_AUTO_START,
+    CHILL_AUTO_START
+  };
+  TunePages tune_page;
+
+  enum class Stages{
+    POMODORO_STAGE,
+    CHILLING_STAGE,
+    BIG_CHILLING_STAGE
+  };
+  Stages pomodoro_stage;
+
+  bool is_timer_launched = false;
+  Time current_time;
+  uint8_t current_pomodoro = 0;
+};
+Pomodoro pomodoro;
+
 
 void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
@@ -154,6 +191,7 @@ void setup() {
 
   load_eeprom_data(); 
   apply_settings();
+  apply_pomodoro_settings();
 
   Wire.begin();
   Wire.setClock(10000);

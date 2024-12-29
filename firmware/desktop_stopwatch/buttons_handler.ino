@@ -34,7 +34,9 @@ void reset_buttons(){
 void handle_buttons(){
   if (!(button1.tick() || button2.tick() || button3.tick()) ) return;
 
-  if (is_display_on && button1.holding() && button2.click()){    
+  Modes m = current_mode;
+
+  if (is_display_on && m == CLOCK && button1.holding() && button2.click()){    
       switch_display(false);
       return ;    
   }
@@ -44,24 +46,27 @@ void handle_buttons(){
     return ;
   }
 
-  if (!is_display_on) return ;
+  if (!is_display_on) return ;  
   
-  Modes m = current_mode;
-  if(m == CLOCK || m == STOPWATCH || m == TIMER || m == WEATHER || m == COUNTER){    
-    if (button1.holding() && button2.holding() && button3.holding()){    
-      reset_buttons();
-      edit_settings();
-      apply_settings();
-      save_settings();
-    }   
+                                           
+  if (m == CLOCK && button1.holding() && button2.holding() && button3.holding()){    
+    reset_buttons();
+    edit_settings();
+    apply_settings();
+    save_settings();
+  }   
 
-    if (button1.click()){
-      set_next_mode();
-      button1.reset();
-    } 
-  }  
+  if (m <= CLOCK && button1.click()){
+    set_next_mode();
+    button1.reset();
+  } 
+  
+
+  bool do_calc = false;
+  char operation;  
 
   switch(current_mode){
+    
     case CLOCK:
       if (button2.holding() && button3.click()){ 
       set_mode(CLOCK_TUNE);
@@ -86,8 +91,8 @@ void handle_buttons(){
           display_text("SN OFF");
         }
         delay(2000); 
+        reset_buttons();
         call_display_update();
-        return;
       }
     break;
 
@@ -96,22 +101,21 @@ void handle_buttons(){
         set_mode(CLOCK);
         button1.reset();       
       }
+      
       if (button2.holding() && button3.click()){
         clock_time.h = 0;
         clock_time.m = 0;
         reset_buttons();
         call_display_update();
       }    
+
       if (button2.click() || button2.step()){
-        if (clock_time.h >= 23) clock_time.h = 0; 
-        else clock_time.h ++;
-        call_display_update();
-      }      
+        in_de_crease_value(clock_time.h, 0, 23, '+');
+        call_display_update();}
+
       if (button3.click() || button3.step()){
-        if (clock_time.m >= 59) clock_time.m = 0;
-        else clock_time.m ++;
-        call_display_update();
-      }
+        in_de_crease_value(clock_time.m, 0, 59, '+');
+        call_display_update();}
     break;
 
     case ALARM_TUNE:
@@ -119,29 +123,27 @@ void handle_buttons(){
         set_mode(CLOCK);
         button1.reset();      
       }
+
       if (button3.holding() && button2.click()){
         alarm_time.h = 0;
         alarm_time.m = 0;
         reset_buttons();
         call_display_update();
-      }    
+      }   
+
       if (button2.click() || button2.step()){
-        if (alarm_time.h >= 23) alarm_time.h = 0; 
-        else alarm_time.h ++;
-        call_display_update();
-      }      
+        in_de_crease_value(alarm_time.h, 0, 23, '+');
+        call_display_update();}
+
       if (button3.click() || button3.step()){
-        if (alarm_time.m >= 59) alarm_time.m = 0;
-        else alarm_time.m ++;
-        call_display_update();
-      }
+        in_de_crease_value(alarm_time.m, 0, 59, '+');
+        call_display_update();}
     break;
 
     case STOPWATCH:
 
-      if (button1.pressFor(1000) && button1.release()){
+      if (button1.hold()){
         set_mode(STOPWATCH_SELECT);
-        button1.reset();
       }
 
       if (button3.release()){
@@ -153,45 +155,37 @@ void handle_buttons(){
           stopwatches[current_stopwatch].time.h = 0;
           stopwatches[current_stopwatch].time.m = 0;
           stopwatches[current_stopwatch].time.s = 0;
-          call_display_update();            
+          call_display_update();
       }
     break;
 
     case STOPWATCH_SELECT:
-      if (button1.release()){
+      if (button1.click()){
         set_mode(STOPWATCH);
-        button1.reset();
       }
 
       if (button2.release()){
-        current_stopwatch = (current_stopwatch > 0) ? current_stopwatch - 1 : UNIT_ARR_SIZE - 1;
-        call_display_update();
-      }
+        in_de_crease_value(current_stopwatch, 0, UNIT_ARR_SIZE - 1, '-');
+        call_display_update();}
 
       if (button3.release()){
-        current_stopwatch = (current_stopwatch < (UNIT_ARR_SIZE - 1)) ? current_stopwatch + 1 : 0;
-        call_display_update();
-      }
+        in_de_crease_value(current_stopwatch, 0, UNIT_ARR_SIZE - 1, '+');
+        call_display_update();}
     break;
 
     case TIMER:
-      if (button1.pressFor(1000) && button1.release()){
+      if (button1.hold()){
         set_mode(TIMER_SELECT);
-        button1.reset();
       }
 
       if (button2.holding() && button3.click()){ 
         set_mode(TIMER_TUNE);
         reset_buttons();
       }
+
       if (button3.release()){
         Time t = timers[current_timer].time;
-        if (!timers[current_timer].is_launched && (t.h + t.m + t.s) > 0){
-          timers[current_timer].is_launched = true;
-        }else{
-          timers[current_timer].is_launched = false;          
-        }
-        call_display_update();
+        timers[current_timer].is_launched = !timers[current_timer].is_launched && (t.h + t.m + t.s) > 0;
       }
 
       if (button2.release() && !timers[current_timer].is_launched){
@@ -203,20 +197,17 @@ void handle_buttons(){
     break;
 
     case TIMER_SELECT:
-      if (button1.release()){        
+      if (button1.click()){        
         set_mode(TIMER);
-        button1.reset();
       }        
 
       if (button2.release()){
-        current_timer = (current_timer > 0) ? current_timer - 1 : UNIT_ARR_SIZE - 1;
-        call_display_update();
-      }
+        in_de_crease_value(current_timer, 0, UNIT_ARR_SIZE - 1, '-');
+        call_display_update();}
 
       if (button3.release()){
-        current_timer = (current_timer < (UNIT_ARR_SIZE - 1)) ? current_timer + 1 : 0;
-        call_display_update();
-      }
+        in_de_crease_value(current_timer, 0, UNIT_ARR_SIZE - 1, '+');
+        call_display_update();}
     break;
 
     case TIMER_TUNE:
@@ -236,27 +227,17 @@ void handle_buttons(){
           blinking_zone += 3;
         else
           blinking_zone = 0;
-        call_display_update();
       }      
       if (button3.click() || button3.step()){
         switch(blinking_zone){
           case 0:
-            if (timers[current_timer].start_time.h >= 99) 
-              timers[current_timer].start_time.h = 0;
-            else 
-              timers[current_timer].start_time.h ++;            
+            in_de_crease_value(timers[current_timer].start_time.h, 0, 99, '+');
           break;
           case 3:
-            if (timers[current_timer].start_time.m >= 59) 
-              timers[current_timer].start_time.m = 0;
-            else 
-              timers[current_timer].start_time.m ++;            
+            in_de_crease_value(timers[current_timer].start_time.m, 0, 59, '+');
           break;
           case 6:
-            if (timers[current_timer].start_time.s >= 59) 
-              timers[current_timer].start_time.s = 0;
-            else 
-              timers[current_timer].start_time.s ++;            
+            in_de_crease_value(timers[current_timer].start_time.s, 0, 59, '+');
           break;
         }
         call_display_update();
@@ -296,11 +277,10 @@ void handle_buttons(){
         delay(2000);
       }        
     break;
-    
+
     case COUNTER:
-      if (button1.pressFor(1000) && button1.release()){
+      if (button1.hold()){
         set_mode(COUNTER_SELECT);
-        button1.reset();
       }
 
       if (counter_mode_values[current_counter] != 0 && button2.pressing() && button3.release()){
@@ -309,24 +289,16 @@ void handle_buttons(){
       }
       
       if(button2.release()){
-        if (counter_mode_values[current_counter] > -99999)
-          counter_mode_values[current_counter] --;
-        else
-          counter_mode_values[current_counter] = 0;
-        call_display_update();
-      }
+        in_de_crease_value(counter_mode_values[current_counter], -99999, 999999, '-');
+        call_display_update();}
 
       if(button3.release()){
-        if (counter_mode_values[current_counter] < 999999)
-          counter_mode_values[current_counter] ++;
-        else
-          counter_mode_values[current_counter] = 0;
-        call_display_update();
-      }
+        in_de_crease_value(counter_mode_values[current_counter], -99999, 999999, '+');
+        call_display_update();}
     break;
 
     case COUNTER_SELECT:
-      if (button1.release()){
+      if (button1.click()){
         set_mode(COUNTER);
         button1.reset();
       }
@@ -340,9 +312,107 @@ void handle_buttons(){
         current_counter = (current_counter < (8)) ? current_counter + 1 : 0;
         call_display_update();
       }
-    break;   
+    break;  
 
+    case POMODORO:  
+
+      if (button2.holding() && button3.click()){ 
+        set_mode(POMODORO_SETTINGS);
+        reset_buttons();
+      }
+
+      if (button1.hold())
+        set_mode(POMODORO_TWEAKTIME);
+
+      if(button2.release()){
+        Pomodoro::Stages st = pomodoro.pomodoro_stage;
+        if (st == Pomodoro::Stages::POMODORO_STAGE){
+          if (pomodoro.is_timer_launched)
+            pomodoro.current_time = convert_minutes_to_time(pomodoro.settings.pomodoro_time);
+          else
+            switch_pomodoro_stage(true);
+        } else {
+          switch_pomodoro_stage(true);
+        }
+        call_display_update();
+      }
+
+      if(button3.release())
+        pomodoro.is_timer_launched = !pomodoro.is_timer_launched;
+    break;
+
+    case POMODORO_SETTINGS:
+      
+      if (button1.hold()){
+        set_mode(POMODORO);
+      }        
+      
+      if (button1.click()){ 
+        int value = (int)pomodoro.tune_page;            
+        in_de_crease_value(value, 0, 5, '+');
+        pomodoro.tune_page = (Pomodoro::TunePages)value;
+        call_display_update();
+      }
+      
+      if (button2.click() || button2.step()){ 
+        do_calc = true;
+        operation = '-';
+      }
+
+      if (button3.click() || button3.step()){ 
+        do_calc = true;
+        operation = '+';
+      }
+
+      if(do_calc){
+        switch(pomodoro.tune_page){
+          case Pomodoro::TunePages::POMODORO_TIME:
+            in_de_crease_value(pomodoro.settings.pomodoro_time, 1, 999, operation);
+          break;
+          case Pomodoro::TunePages::CHILL_TIME:
+            in_de_crease_value(pomodoro.settings.chill_time, 1, 999, operation);
+          break;
+          case Pomodoro::TunePages::POMODORO_COUNT:
+            in_de_crease_value(pomodoro.settings.pomodoro_count, 1, 99, operation);
+          break;
+          case Pomodoro::TunePages::BIG_CHILL_TIME:
+            in_de_crease_value(pomodoro.settings.big_chill_time, 1, 999, operation);
+          break;
+          case Pomodoro::TunePages::POMODORO_AUTO_START:
+            in_de_crease_value(pomodoro.settings.pomodoro_auto_start, 0, 1, operation);
+          break;
+          case Pomodoro::TunePages::CHILL_AUTO_START:
+            in_de_crease_value(pomodoro.settings.chill_auto_start, 0, 1, operation);
+          break;
+        }
+      call_display_update();
+      }
+    break;
+
+    case POMODORO_TWEAKTIME:  
+
+      if (button1.click())
+        set_mode(POMODORO);
+
+      if(button2.click() || button2.step()){
+        do_calc = true;
+        operation = '-';        
+      }
+
+      if(button3.click() || button3.step()){
+        do_calc = true;
+        operation = '+';   
+      }
+
+      if (do_calc){
+        uint16_t mins = 60 * pomodoro.current_time.h + pomodoro.current_time.m;        
+        in_de_crease_value(mins, 1, 999, operation);
+        uint8_t secs = pomodoro.current_time.s;
+        pomodoro.current_time = convert_minutes_to_time(mins);
+        pomodoro.current_time.s = secs;
+        call_display_update();
+      }
+    break;       
   }
-
 }
 

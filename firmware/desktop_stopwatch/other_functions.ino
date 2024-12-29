@@ -1,7 +1,7 @@
 
 bool is_mode_available(Modes mode){
   byte am = settings.p14_active_modes;
-  if (mode >= 0 && mode <= 3 && !bitRead(am, mode))
+  if (mode >= 0 && mode <= 4 && !bitRead(am, mode))
     return false;
 
   if (mode == WEATHER && connected_sensor == NO_SENSOR)
@@ -24,7 +24,7 @@ void set_mode(Modes mode){
       weather_update_timer.stop();
     break;
     case CLOCK_TUNE:
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
       try_change_brightness_mode(true);
       if (is_rtc_available){
         rtc.setHours((unsigned int) clock_time.h);
@@ -33,17 +33,17 @@ void set_mode(Modes mode){
       }
     break;
     case ALARM_TUNE:      
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
       save_alarm();
     break;
     case TIMER_TUNE:
       timers[current_timer].time.h = timers[current_timer].start_time.h;
       timers[current_timer].time.m = timers[current_timer].start_time.m;
       timers[current_timer].time.s = timers[current_timer].start_time.s;
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
     break;
     case TIMER_EXPIRED:
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
       buzzer_timer.stop();
       for(int i = 0; i < UNIT_ARR_SIZE; i++){
         if (!timers[i].is_expired) continue;
@@ -54,13 +54,21 @@ void set_mode(Modes mode){
       }
     break;
     case ALARM:
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
       buzzer_timer.stop();  
     break;
     case STOPWATCH_SELECT: 
     case TIMER_SELECT:
     case COUNTER_SELECT:
-      set_display_blinking(false);
+      set_display_blinking(false, -1);
+    break;
+   
+    case POMODORO_SETTINGS:
+      save_pomodoro_settings();
+      apply_pomodoro_settings();
+    break;
+    case POMODORO_TWEAKTIME:
+      set_display_blinking(false, -1);
     break;
   }
 
@@ -76,28 +84,24 @@ void set_mode(Modes mode){
         weather_update_timer.start();
     break;
     case CLOCK_TUNE:
-      set_display_blinking(true);      
+      set_display_blinking(true, -1);      
       clock_time.s = 0;
     break;
     case ALARM_TUNE:
-      blinking_zone = -1;
-      set_display_blinking(true);
+      set_display_blinking(true, -1);
     break;
     case TIMER_TUNE:
       timers[current_timer].is_launched = false;
-      set_display_blinking(true);
-      blinking_zone = 6;
+      set_display_blinking(true, 6);
     break;
     case TIMER_EXPIRED:
-      blinking_zone = -1;
-      set_display_blinking(true);
+      set_display_blinking(true, -1);
       switch_display(true);
       if (settings.p11_use_speaker)
         buzzer_timer.start();      
     break;
     case ALARM:
-      blinking_zone = -1;
-      set_display_blinking(true);
+      set_display_blinking(true, -1);
       switch_display(true);
       buzzer_timer.start();
       if (settings.p12_alarm_duration > 0)
@@ -106,22 +110,29 @@ void set_mode(Modes mode){
     case STOPWATCH_SELECT: 
     case TIMER_SELECT:
     case COUNTER_SELECT:
-      blinking_zone = -1;
-      set_display_blinking(true);
+      set_display_blinking(true, -1);
+    break;
+
+    case POMODORO_SETTINGS:
+      pomodoro.is_timer_launched = false;
+    break;
+
+    case POMODORO_TWEAKTIME:      
+      set_display_blinking(true, -1);
     break;
   }
 
-  current_mode = mode;
+  current_mode = mode;  
   clear_display_buffer();
   call_display_update();
 }
 
 void set_next_mode(){
-  if (current_mode > 4) return ;
+  if (current_mode > CLOCK) return ;
   uint8_t mode = current_mode;
 
   while(1){
-    mode = (mode == 4)? 0 : mode + 1; 
+    mode = (mode == CLOCK)? 0 : mode + 1; 
     if(is_mode_available(mode)){
       set_mode(mode);
       return ;
@@ -164,4 +175,19 @@ String get_weather_param_str(WeatherUnit param){
   }
   return str;
 }
+
+template <typename T, typename T2>
+  void in_de_crease_value(T &value, T2 min_value, T2 max_value, char direction){
+    if (direction == '+'){
+      if (value >= max_value) 
+        value = min_value;
+      else 
+        value ++;  
+    } else {
+      if (value <= min_value) 
+        value = max_value;
+      else 
+        value --;  
+    }
+  }
 

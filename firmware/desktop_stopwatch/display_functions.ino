@@ -1,4 +1,5 @@
-void set_display_blinking(bool status){
+void set_display_blinking(bool status, int zone){
+  blinking_zone = zone;
   if (status){
     display_blink_timer.start();
   } else{
@@ -133,8 +134,8 @@ void send_clocktime_to_dispbuff(Time &t, bool show_dots, bool show_secs){
   }
 }
 
-void update_display(){
-  if (!do_display_update || !is_display_on) return;
+void update_display(){ 
+  if (!do_display_update || !is_display_on) return; 
 
   switch (current_mode){
     case CLOCK:
@@ -156,19 +157,13 @@ void update_display(){
 
     case STOPWATCH:
     case STOPWATCH_SELECT:
-      send_time_to_dispbuff();
-    break;
-
     case TIMER:
     case TIMER_SELECT:
     case TIMER_EXPIRED:
-      send_time_to_dispbuff();    
-    break;
-
     case TIMER_TUNE:
       send_time_to_dispbuff();
     break;
-
+    
     case WEATHER:
       get_weather_param_str(current_weat_page).toCharArray(disp_buf, 9);
     break;
@@ -182,11 +177,73 @@ void update_display(){
       }
       disp_buf[7] = (current_counter + 1) + 48;      
     break;
+
+    case POMODORO_SETTINGS:
+      clear_display_buffer();  
+      switch(pomodoro.tune_page){
+        case Pomodoro::TunePages::POMODORO_TIME:
+          strcat(disp_buf, "Pt ");
+          itoa((int)pomodoro.settings.pomodoro_time, disp_buf + 3, DEC);              
+        break;
+        case Pomodoro::TunePages::CHILL_TIME:
+          strcat(disp_buf, "Ct ");
+          itoa((int)pomodoro.settings.chill_time, disp_buf + 3, DEC);
+        break;
+        case Pomodoro::TunePages::POMODORO_COUNT:
+          strcat(disp_buf, "PC ");
+          itoa((int)pomodoro.settings.pomodoro_count, disp_buf + 3, DEC);
+        break;
+        case Pomodoro::TunePages::BIG_CHILL_TIME:
+          strcat(disp_buf, "bCt ");
+          itoa((int)pomodoro.settings.big_chill_time, disp_buf + 4, DEC);
+        break;
+        case Pomodoro::TunePages::POMODORO_AUTO_START:
+          strcat(disp_buf, "PAS ");
+          itoa((int)pomodoro.settings.pomodoro_auto_start, disp_buf + 4, DEC);
+        break;
+        case Pomodoro::TunePages::CHILL_AUTO_START:
+          strcat(disp_buf, "CAS ");
+          itoa((int)pomodoro.settings.chill_auto_start, disp_buf + 4, DEC);
+        break;  
+      }
+    break;
+
+    case POMODORO:
+    case POMODORO_TWEAKTIME:     
+      clear_display_buffer();  
+
+      switch (pomodoro.pomodoro_stage){
+        case Pomodoro::Stages::BIG_CHILLING_STAGE:
+          strcat(disp_buf, "bC");
+        break;
+        case Pomodoro::Stages::CHILLING_STAGE:
+          strcat(disp_buf, "C");
+        break;       
+        case Pomodoro::Stages::POMODORO_STAGE:
+           itoa((int)pomodoro.current_pomodoro, disp_buf, DEC);
+        break;        
+      }    
+      
+
+      int min = pomodoro.current_time.h * 60 + pomodoro.current_time.m;
+      char str_min[4];
+      itoa(min, str_min, DEC);  
+    
+      int free_segs = (6 - strlen(disp_buf) - strlen(str_min));     
+      int space_amount = free_segs > 1 ? free_segs - 1 : 1;
+
+      for (int i=0; i < space_amount; i++)
+        strcat(disp_buf, " "); 
+      strcat(disp_buf, str_min); 
+      strcat(disp_buf, free_segs > 1 ? "_" : ".");
+      disp_buf[strlen(disp_buf)] = pomodoro.current_time.s / 10 + 48;
+      disp_buf[strlen(disp_buf)] = pomodoro.current_time.s % 10 + 48;              
+    break;
   }
-  
+   
   invert_buf();
-  if (current_mode == WEATHER || current_mode == COUNTER) 
-    max7219.Clear();
+  if (current_mode == WEATHER  || current_mode == POMODORO_SETTINGS) 
+      max7219.Clear(); 
   max7219.DisplayText(disp_buf, ALIGNMENT_DISP);
  
   do_display_update = false;

@@ -37,7 +37,6 @@ void handle_timers(){
     if (do_update){
       show_active_units_dots = !show_active_units_dots;
       call_display_update();
-      DEBUG_PRINTLN(F("do update"));
     }    
   }  
 }

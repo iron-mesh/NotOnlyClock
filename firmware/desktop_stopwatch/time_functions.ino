@@ -71,8 +71,22 @@ ISR(TIMER1_A){
       }        
     }
   }
-  if (((current_mode == STOPWATCH || current_mode == STOPWATCH_SELECT) && stopwatches[current_stopwatch].is_launched) ||
-    ((current_mode == TIMER || current_mode == TIMER_SELECT) && timers[current_timer].is_launched) )  
+
+  if (pomodoro.is_timer_launched){
+    decrease_time(pomodoro.current_time);
+    Time t = pomodoro.current_time;
+    if((t.h + t.m + t.s) == 0){
+      switch_pomodoro_stage(false); 
+      if (current_mode != ALARM && current_mode != TIMER_EXPIRED){
+        set_mode(POMODORO);
+        tone(BUZZER_PIN, BUZZER_FREQ, 1000);
+      }    
+    }   
+  }
+
+  if ( ((current_mode == STOPWATCH || current_mode == STOPWATCH_SELECT) && stopwatches[current_stopwatch].is_launched) ||
+    ((current_mode == TIMER || current_mode == TIMER_SELECT) && timers[current_timer].is_launched) ||
+    ((current_mode == POMODORO || current_mode == POMODORO_TWEAKTIME) && pomodoro.is_timer_launched)  )  
       call_display_update();
 
   if (is_alarm_snooze && is_alarm_active){
