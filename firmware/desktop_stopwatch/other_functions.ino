@@ -44,7 +44,7 @@ void set_mode(Modes mode){
     break;
     case TIMER_EXPIRED:
       set_display_blinking(false, -1);
-      buzzer_timer.stop();
+      switch_sound(false, 0);
       for(int i = 0; i < UNIT_ARR_SIZE; i++){
         if (!timers[i].is_expired) continue;
         timers[i].is_expired = false;
@@ -55,7 +55,7 @@ void set_mode(Modes mode){
     break;
     case ALARM:
       set_display_blinking(false, -1);
-      buzzer_timer.stop();  
+      switch_sound(false, 0);
     break;
     case STOPWATCH_SELECT: 
     case TIMER_SELECT:
@@ -98,12 +98,12 @@ void set_mode(Modes mode){
       set_display_blinking(true, -1);
       switch_display(true);
       if (settings.p11_use_speaker)
-        buzzer_timer.start();      
+        switch_sound(true, 0);     
     break;
     case ALARM:
       set_display_blinking(true, -1);
       switch_display(true);
-      buzzer_timer.start();
+      switch_sound(true, 0);
       if (settings.p12_alarm_duration > 0)
         alarm_off_counter = 60 * settings.p12_alarm_duration;
     break;
@@ -190,4 +190,28 @@ template <typename T, typename T2>
         value --;  
     }
   }
+
+
+void switch_sound(bool status, uint32_t duration){
+/* Switch on|off buzzer sound signal
+    Parameters:
+      status: true - on, false - off      
+      duration: total duration of the signal (in ms) (if 0 - endless)
+*/
+
+  if (status){
+    buzzer_timer.start();
+    if (duration > 0){
+      buzzer_switchoff_timer.setTime(duration);
+      buzzer_switchoff_timer.start();
+    }
+  } else {
+    buzzer_timer.stop();
+    buzzer_switchoff_timer.stop();
+  }
+}
+
+void switch_btnlight(bool status){
+  digitalWrite(BTN_LIGHT_PIN, status);
+}
 

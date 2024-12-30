@@ -51,6 +51,11 @@ void apply_settings(){
       timers[i].is_expired = false;
     }    
   }
+
+  if (settings.p16_btnlight_mode == 2)
+    switch_btnlight(true);
+  else if (settings.p16_btnlight_mode == 0)
+    switch_btnlight(false);
 }
 
 uint8_t input_uint8(uint8_t value,  const uint8_t min, const uint8_t max, const bool change_bright){
@@ -154,7 +159,7 @@ void edit_settings(){
   is_auto_brightness_allowed = false;
   max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
   
-  const uint8_t LAST_PARAM = 14;
+  const uint8_t LAST_PARAM = 16;
   uint8_t current_param = 1;
   display_parameter(current_param);
   while(1){
@@ -233,6 +238,12 @@ void edit_settings(){
         break;
         case 14:
           settings.p14_active_modes = input_uint8(settings.p14_active_modes, 0, 31, false);
+        break;
+        case 15:
+          settings.p15_pomodoro_signal_duration = input_uint8(settings.p15_pomodoro_signal_duration, 0, 255, false);
+        break;
+        case 16:
+          settings.p16_btnlight_mode = input_uint8(settings.p16_btnlight_mode, 0, 2, false);
         break;
       }
       display_parameter(current_param);

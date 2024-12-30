@@ -342,21 +342,29 @@ void try_change_brightness_mode(const bool force_checking){
   volatile static bool is_night_mode = false;
   if (force_checking){
     is_night_mode = curr_hour_in_range();
-    if (is_night_mode)
+    if (is_night_mode){
       max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
-    else
+      if (settings.p16_btnlight_mode == 1)
+        switch_btnlight(true);        
+    } else {
       max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
+      if (settings.p16_btnlight_mode == 1)
+        switch_btnlight(false);
+    }
     return;
   }
 
   if (prev_hour != clock_time.h){
     if (!is_night_mode && curr_hour_in_range()){
       max7219.MAX7219_SetBrightness(settings.p2_night_display_brightness);
-      is_night_mode = true;
-    } 
-    else if (is_night_mode && !curr_hour_in_range()){
+      if (settings.p16_btnlight_mode == 1)
+        switch_btnlight(true);
+      is_night_mode = true;  
+    }else if (is_night_mode && !curr_hour_in_range()){
       max7219.MAX7219_SetBrightness(settings.p1_display_brightness);
-      is_night_mode = false;
+      if (settings.p16_btnlight_mode == 1)
+        switch_btnlight(false);
+      is_night_mode = false;  
     }
     prev_hour = clock_time.h;
   }

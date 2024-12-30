@@ -8,22 +8,24 @@
 #include <I2C_RTC.h>
 
 // firmware configuration
-#define DEBUG 1 // 1 - debug is activated, 0 - deactivated
+#define DEBUG 0  // 1 - debug is activated, 0 - deactivated
 #define VERSION "1.3.0d"
-#define DISPLAY_INVERTED 0 // 1 - inverted connection of segments to MAX7219, 0 - not
-#define USE_RTC_MODULE 0 // 1 - use RTC, 0 - don't use
+#define DISPLAY_INVERTED 1  // 1 - inverted connection of segments to MAX7219, 0 - not
+#define USE_RTC_MODULE 0    // 1 - use RTC, 0 - don't use
 
-#define INIT_KEY 6// key for eeprom settings storage
+#define INIT_KEY 7  // key for eeprom settings storage
 #define INIT_KEY_ADDR 1023
 
-#define DISPLAY_BLINK_PERIOD 200 
-#define DOT_BLINK_PERIOD 500 
+#define DISPLAY_BLINK_PERIOD 200
+#define DOT_BLINK_PERIOD 500
 #define BTN_STEP_TIMEOUT 80
 
-#define BUZZER_PIN 5 // speaker pin
-#define BUZZER_FREQ 523 // frequency of the sound wave
-#define BUZZER_DURATION 400 // duration of speaking (ms)
-#define BUZZER_DELAY 300 // delay between speakings
+#define BUZZER_PIN 5         // speaker pin
+#define BUZZER_FREQ 523      // frequency of the sound wave
+#define BUZZER_DURATION 400  // duration of speaking (ms)
+#define BUZZER_DELAY 300     // delay between speakings
+
+#define BTN_LIGHT_PIN 6
 
 #include "utils/utils.h"
 
@@ -35,15 +37,15 @@
 
 
 //types definitions
-enum Modes{  
-  STOPWATCH, 
+enum Modes {
+  STOPWATCH,
   TIMER,
   WEATHER,
   POMODORO,
   COUNTER,
   CLOCK,
   ALARM,
-  CLOCK_TUNE, 
+  CLOCK_TUNE,
   TIMER_TUNE,
   ALARM_TUNE,
   TIMER_EXPIRED,
@@ -53,13 +55,15 @@ enum Modes{
   POMODORO_SETTINGS,
   POMODORO_TWEAKTIME};
 
-enum WeatherUnit{TEMPERATURE, 
-    HUMIDITY, 
-    PRESSURE};
+enum WeatherUnit{
+  TEMPERATURE, 
+  HUMIDITY,
+  PRESSURE};
 
-enum SensorType{NO_SENSOR, 
-    SENSOR_BME280, 
-    SENSOR_BMP280};
+enum SensorType{
+  NO_SENSOR, 
+  SENSOR_BME280,
+  SENSOR_BMP280};
 
 struct Time{
   uint8_t h = 0;
@@ -82,7 +86,7 @@ struct SetttingsData{
   uint8_t p1_display_brightness = 15;
   uint8_t p2_night_display_brightness = 15;
   uint8_t p3_nightbrightness_start_hour = 0;
-  uint8_t p4_nightbrightness_end_hour= 0;
+  uint8_t p4_nightbrightness_end_hour = 0;
   uint8_t p5_show_seconds_clock = 1;
   uint32_t p6_maintimer_period = 1000000;
   uint8_t p7_wpage_change_freq = 5;
@@ -93,6 +97,8 @@ struct SetttingsData{
   uint8_t p12_alarm_duration = 30;
   uint8_t p13_snooze_duration = 10;
   byte p14_active_modes = 31;
+  uint8_t p15_pomodoro_signal_duration = 3;
+  uint8_t p16_btnlight_mode = 0;
 };
 
 //eeprom addresses
@@ -106,17 +112,18 @@ MAX7219 max7219;
 BME280I2C bme;
 DS3231 rtc;
 
-TimerMs btn_handler_timer(50, 1, 0); 
+TimerMs btn_handler_timer(50, 1, 0);
 TimerMs wpage_timer;
-TimerMs weather_update_timer; 
-TimerMs display_blink_timer(DISPLAY_BLINK_PERIOD); 
+TimerMs weather_update_timer;
+TimerMs display_blink_timer(DISPLAY_BLINK_PERIOD);
 TimerMs buzzer_timer(BUZZER_DURATION + BUZZER_DELAY);
-TimerMs dot_blink_timer(DOT_BLINK_PERIOD); 
+TimerMs buzzer_switchoff_timer(1000, 0, 1);
+TimerMs dot_blink_timer(DOT_BLINK_PERIOD);
 
 Modes current_mode = CLOCK;
 WeatherUnit current_weat_page = TEMPERATURE;
 
-volatile bool do_display_update = true; 
+volatile bool do_display_update = true;
 bool is_display_on = true;
 bool is_auto_brightness_allowed = true;
 bool is_rtc_available = false;
@@ -149,7 +156,7 @@ struct Pomodoro{
   struct {
     uint16_t pomodoro_time = 25;
     uint16_t chill_time = 5;
-    uint8_t pomodoro_count = 4; 
+    uint8_t pomodoro_count = 4;
     uint16_t big_chill_time = 30;
     uint8_t pomodoro_auto_start = 1;
     uint8_t chill_auto_start = 1;
@@ -181,15 +188,16 @@ Pomodoro pomodoro;
 
 void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(BTN_LIGHT_PIN, OUTPUT);
 
-  #if (DEBUG == 1)
-    Serial.begin(9600);
-    Serial.println(F("Setup stage"));
-  #endif
+#if (DEBUG == 1)
+  Serial.begin(9600);
+  Serial.println(F("Setup stage"));
+#endif
 
   max7219.Begin();
 
-  load_eeprom_data(); 
+  load_eeprom_data();
   apply_settings();
   apply_pomodoro_settings();
 
@@ -200,17 +208,17 @@ void setup() {
     switch(bme.chipModel()) {
       case BME280::ChipModel_BME280:
         connected_sensor = SENSOR_BME280;
-      break;
+        break;
       case BME280::ChipModel_BMP280:
         connected_sensor = SENSOR_BMP280;
-      break;
+        break;
     }
-  }   
+  }
 
-  #if (USE_RTC_MODULE == 1)
-    delay(1000); 
-    is_rtc_available = rtc.begin();
-  #endif  
+#if (USE_RTC_MODULE == 1)
+  delay(1000);
+  is_rtc_available = rtc.begin();
+#endif
   if (is_rtc_available){  
     if(rtc.isRunning()){
       clock_time.h = (uint8_t)rtc.getHours();
@@ -223,13 +231,13 @@ void setup() {
       rtc.startClock();
     }
   }
-  Timer1.enableISR();  
+  Timer1.enableISR();
 
-  init_buttons();  
+  init_buttons();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   update_display();
-  handle_timers(); 
+  handle_timers();
 }

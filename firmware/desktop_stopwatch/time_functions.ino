@@ -75,12 +75,11 @@ ISR(TIMER1_A){
   if (pomodoro.is_timer_launched){
     decrease_time(pomodoro.current_time);
     Time t = pomodoro.current_time;
-    if((t.h + t.m + t.s) == 0){
-      switch_pomodoro_stage(false); 
-      if (current_mode != ALARM && current_mode != TIMER_EXPIRED){
-        set_mode(POMODORO);
-        tone(BUZZER_PIN, BUZZER_FREQ, 1000);
-      }    
+    if((t.h + t.m + t.s) == 0 && current_mode != ALARM && current_mode != TIMER_EXPIRED){
+      switch_pomodoro_stage(false);       
+      set_mode(POMODORO);
+      if (settings.p15_pomodoro_signal_duration > 0)
+        switch_sound(true, settings.p15_pomodoro_signal_duration * 1000);
     }   
   }
 

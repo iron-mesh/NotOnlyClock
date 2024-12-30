@@ -16,6 +16,9 @@ void handle_timers(){
   if(buzzer_timer.tick())
     tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_DURATION);
 
+  if(buzzer_switchoff_timer.tick())
+    buzzer_timer.stop();
+
   if(dot_blink_timer.tick()){
     bool do_update = false;
     for(int i = 0; i < UNIT_ARR_SIZE; i++){
