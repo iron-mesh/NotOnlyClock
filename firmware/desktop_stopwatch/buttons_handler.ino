@@ -1,7 +1,6 @@
 
 bool ask_questions(char *msg){
   bool answer = false;
-  reset_buttons();
   display_text(msg);
   while(1){
     if (!(button1.tick() || button3.tick())) continue;
@@ -283,7 +282,7 @@ void handle_buttons(){
         set_mode(COUNTER_SELECT);
       }
 
-      if (counter_mode_values[current_counter] != 0 && button2.pressing() && button3.release()){
+      if (button2.holding() && button3.holding()){
         if (ask_questions("reset"))
           counter_mode_values[current_counter] = 0;      
       }
@@ -319,6 +318,11 @@ void handle_buttons(){
       if (button2.holding() && button3.click()){ 
         set_mode(POMODORO_SETTINGS);
         reset_buttons();
+      }
+
+      if (button2.holding() && button3.holding()){
+        if (ask_questions("reset"))
+          apply_pomodoro_settings();   
       }
 
       if (button1.hold())
